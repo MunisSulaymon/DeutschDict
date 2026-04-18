@@ -91,10 +91,17 @@ header { padding: 1.5rem 2rem; display: flex; justify-content: space-between; al
 .lang-select { padding: 0.6rem 1.2rem; border-radius: 20px; border: 1px solid var(--glass-border); background: var(--glass-hover); color: var(--text); cursor: pointer; font-family: inherit; font-weight: 600; outline: none; transition: all 0.3s; }
 .lang-select:hover { border-color: var(--primary); }
 
-main { max-width: 800px; margin: 3rem auto; padding: 0 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+main { max-width: 1000px; margin: 3rem auto; padding: 0 1.5rem; display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem; align-items: stretch; }
+.bento-wotd { grid-column: span 8; display: flex; flex-direction: column; justify-content: center; }
+.bento-profile { grid-column: span 4; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--glass); backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%); border: 1px solid var(--glass-border); border-radius: var(--bento-radius); box-shadow: var(--card-shadow); padding: 2.5rem 1.5rem; text-align: center; transition: transform 0.4s; }
+.bento-profile:hover { transform: scale(1.02); }
+.bento-profile h3 { font-size: 1.2rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.bento-profile .level { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text); }
+.bento-profile .stats { font-size: 1.1rem; color: var(--primary); font-weight: 600; }
+.bento-full { grid-column: span 12; width: 100%; }
 
 /* BENTO WOTD CARD */
-.wotd-card { padding: 3rem; text-align: center; position: relative; overflow: hidden; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.wotd-card { padding: 3rem; text-align: center; position: relative; overflow: hidden; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .wotd-card:hover { transform: scale(1.02); }
 .wotd-card h2 { font-size: 4rem; margin-bottom: 0.5rem; font-weight: 700; letter-spacing: -2px; }
 .wotd-badge { background: var(--primary); padding: 0.3rem 0.8rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; vertical-align: middle; margin-left: 1rem; color: white; }
@@ -181,7 +188,9 @@ details[open] .resources-summary::after { transform: rotate(45deg); }
 .resource-group a { display: block; margin-bottom: 0.8rem; font-size: 1.05rem; font-weight: 500; color: var(--text-muted); transition: color 0.2s; }
 .resource-group a:hover { color: var(--text); transform: translateX(3px); text-decoration: none; }
 
-@media (max-width: 600px) { 
+@media (max-width: 800px) { 
+  .bento-wotd { grid-column: span 12; }
+  .bento-profile { grid-column: span 12; }
   header { flex-direction: column; gap: 1rem; padding: 1.5rem; border-radius: 0 0 24px 24px; } 
   .header-right { width: 100%; justify-content: space-between; } 
   .search-container { flex-direction: column; } 
@@ -200,9 +209,6 @@ details[open] .resources-summary::after { transform: rotate(45deg); }
 <header>
   <div class="header-left">
     <a href="index.html">🔵 DeutschDict</a>
-  </div>
-  <div class="header-center" id="learningProfile">
-    Beginner 🌱 | 0 words this week
   </div>
   <div class="header-right">
     <select id="langSelect" class="lang-select">
@@ -230,34 +236,45 @@ details[open] .resources-summary::after { transform: rotate(45deg); }
 </header>
 
 <main>
-  <!-- Word of the Day -->
-  <div class="wotd-card glass" id="wotdCard">
-    <div style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; opacity: 0.8;">Word of the Day</div>
-    <h2 id="wotdWord">...</h2>
-    <div id="wotdMeaning" style="font-size: 1.1rem;">Loading...</div>
-    <div id="wotdTranslation" style="font-size: 1.2rem; font-weight: bold; margin: 0.5rem 0;"></div>
-    <div class="wotd-tip" id="wotdTip"></div>
-    <div>
-      <button class="wotd-btn" id="wotdPronounce">🔊 Pronounce</button>
-      <button class="wotd-btn" id="wotdSave" style="margin-left:0.5rem;">⭐ Add to My List</button>
+  <!-- Word of the Day Bento -->
+  <div class="bento-wotd">
+    <div class="wotd-card glass" id="wotdCard">
+      <div style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; opacity: 0.8;">Word of the Day</div>
+      <h2 id="wotdWord">...</h2>
+      <div id="wotdMeaning" style="font-size: 1.1rem;">Loading...</div>
+      <div id="wotdTranslation" style="font-size: 1.2rem; font-weight: bold; margin: 0.5rem 0;"></div>
+      <div class="wotd-tip" id="wotdTip"></div>
+      <div>
+        <button class="wotd-btn" id="wotdPronounce">🔊 Pronounce</button>
+        <button class="wotd-btn" id="wotdSave" style="margin-left:0.5rem;">⭐ Add to My List</button>
+      </div>
     </div>
   </div>
 
-  <div class="in-context-memory" id="inContext"></div>
+  <!-- Learning Profile Bento Card -->
+  <div class="bento-profile">
+    <h3>Your Progress</h3>
+    <div class="level" id="profileLevel">🌱</div>
+    <div class="stats" id="profileStats">0 words</div>
+  </div>
 
-  <!-- Search Area -->
-  <div class="search-container">
+  <div class="bento-full">
+    <div class="in-context-memory" id="inContext"></div>
+  </div>
+
+  <!-- Search Area Bento -->
+  <div class="search-container bento-full">
     <input type="text" id="searchInput" class="search-input" placeholder="Type a German word... (e.g. Liebe, Haus, Zeit)" aria-label="Search word">
     <button id="searchBtn" class="search-btn">Search</button>
   </div>
 
   <!-- Ad Slot 1 -->
-  <div class="ad-slot glass" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="SLOT1">
+  <div class="ad-slot glass bento-full" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="SLOT1">
     📢 Ad space — replace with your AdSense code
   </div>
 
   <!-- React Reasoning Steps -->
-  <div class="react-steps glass" id="reactSteps">
+  <div class="react-steps glass bento-full" id="reactSteps">
     <div class="react-step" id="step1">Detecting input...</div>
     <div class="react-step" id="step2">Fetching definitions from FreeDictionaryAPI...</div>
     <div class="react-step" id="step3">Translating to user language via MyMemory...</div>
@@ -265,19 +282,21 @@ details[open] .resources-summary::after { transform: rotate(45deg); }
     <div class="react-step" id="step5" style="margin-top:0.5rem; color:var(--primary); font-weight:bold;">Done!</div>
   </div>
 
-  <div class="episodic-memory" id="episodicMemory"></div>
+  <div class="bento-full">
+    <div class="episodic-memory" id="episodicMemory"></div>
+  </div>
 
   <!-- Results Area -->
-  <div class="results" id="results"></div>
+  <div class="results bento-full" id="results"></div>
 
   <!-- Related Words Area -->
-  <div class="related-words glass" id="relatedWords">
+  <div class="related-words glass bento-full" id="relatedWords">
     <h3>Semantic Related Words</h3>
     <div class="related-tags" id="relatedWordsContainer"></div>
   </div>
 
   <!-- Ad Slot 3 -->
-  <div class="ad-slot glass" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="SLOT3">
+  <div class="ad-slot glass bento-full" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="SLOT3">
     📢 Ad space — replace with your AdSense code
   </div>
 </main>
@@ -549,16 +568,18 @@ function init() {
 
 function updateProfile() {
   try {
-    const learningProfile = el('learningProfile');
+    const profileLevel = el('profileLevel');
+    const profileStats = el('profileStats');
     const savedCount = el('savedCount');
-    if(!learningProfile || !savedCount) return;
 
     const count = savedWords.length;
-    let level = "Beginner 🌱";
-    if(count >= 11) level = "Intermediate 🌿";
-    if(count >= 51) level = "Advanced 🌳";
-    learningProfile.textContent = `${level} | ${count} words learned`;
-    savedCount.textContent = count;
+    let level = "🌱";
+    if(count >= 11) level = "🌿";
+    if(count >= 51) level = "🌳";
+    
+    if(profileLevel) profileLevel.textContent = level;
+    if(profileStats) profileStats.textContent = `${count} words learned`;
+    if(savedCount) savedCount.textContent = count;
   } catch(e) {}
 }
 
