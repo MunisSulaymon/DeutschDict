@@ -612,17 +612,29 @@ async function renderWOTD() {
   const word = wordList[day % wordList.length];
   
   try {
-    const res = await fetch(`https://api.freedictionaryapi.com/api/v2/entries/de/${word}`);
-    if(!res.ok) throw new Error("not found");
-    const data = await res.json();
-    
     let meaning = "No definition found.";
     let pos = "word";
-    if(data && data[0] && data[0].meanings && data[0].meanings[0]) {
-       pos = data[0].meanings[0].partOfSpeech || 'word';
-       if(data[0].meanings[0].definitions && data[0].meanings[0].definitions[0]) {
-         meaning = data[0].meanings[0].definitions[0].definition;
-       }
+
+    try {
+      const res = await fetch(`https://api.freedictionaryapi.com/api/v2/entries/de/${word}`);
+      if(!res.ok) throw new Error("not found");
+      const data = await res.json();
+      
+      if(data && data[0] && data[0].meanings && data[0].meanings[0]) {
+         pos = data[0].meanings[0].partOfSpeech || 'word';
+         if(data[0].meanings[0].definitions && data[0].meanings[0].definitions[0]) {
+           meaning = data[0].meanings[0].definitions[0].definition;
+         }
+      }
+    } catch(err1) {
+      // Fallback to Wiktionary API if FreeDictionary fails
+      const res2 = await fetch(`https://en.wiktionary.org/api/rest_v1/page/definition/${word}`);
+      if(!res2.ok) throw new Error("Wiktionary fail");
+      const wikidata = await res2.json();
+      if(wikidata && wikidata.de && wikidata.de[0] && wikidata.de[0].definitions) {
+         meaning = wikidata.de[0].definitions[0].definition.replace(/<[^>]+>/g, '');
+         pos = wikidata.de[0].partOfSpeech || 'noun';
+      } else throw new Error("Invalid Wiktionary format");
     }
 
     const translation = await translate(meaning);
