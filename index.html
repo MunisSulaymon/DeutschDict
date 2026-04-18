@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeutschDict — German Dictionary in Your Language</title>
+<meta name="description" content="Free German dictionary with definitions in Uzbek, Russian, Arabic, Chinese and 17 more languages. Powered by AI agent patterns.">
+<meta name="keywords" content="German dictionary, Deutsch, learn German, German to Uzbek, German to Russian, German translation, DeutschDict">
+<meta name="author" content="DeutschDict">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://munissulaymon.github.io/DeutschDict/">
+<meta property="og:title" content="DeutschDict — German Dictionary">
+<meta property="og:description" content="Learn German words in your own language. Free.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://munissulaymon.github.io/DeutschDict/">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#ffffff; --text:#1a1a1a; --card:#f8f9fa; --border:#e0e0e0; --text-muted:#666; --primary:#185FA5; --secondary:#534AB7; }
+[data-theme="dark"] { --bg:#0d1117; --text:#e6edf3; --card:#161b22; --border:#30363d; --text-muted:#8b949e; }
+* { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
+body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.6; padding-bottom: 60px; }
+a { color: var(--primary); text-decoration: none; }
+header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.header-left { font-weight: bold; font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem;}
+.header-left a { color: white; }
+.header-center { font-size: 0.9rem; background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 20px; text-align: center; }
+.header-right { display: flex; align-items: center; gap: 1rem; }
+.theme-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: white;}
+.lang-select { padding: 0.4rem; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+main { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+
+/* WOTD */
+.wotd-card { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 2rem; border-radius: 12px; text-align: center; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.wotd-card h2 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.wotd-badge { background: rgba(255,255,255,0.2); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; vertical-align: middle; margin-left: 0.5rem; }
+.wotd-tip { font-size: 0.9rem; opacity: 0.9; margin: 1rem 0; font-style: italic; }
+.wotd-btn { background: white; color: var(--primary); border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 1rem; }
+.wotd-btn:hover { opacity: 0.9; }
+
+/* Search */
+.search-container { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.search-input { flex: 1; padding: 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 1.1rem; }
+.search-btn { padding: 0 2rem; border-radius: 8px; background: var(--primary); color: white; border: none; font-size: 1.1rem; cursor: pointer; font-weight: bold; }
+.in-context-memory { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+.episodic-memory { font-size: 0.85rem; color: var(--primary); font-style: italic; margin-bottom: 1rem; }
+
+/* React Steps */
+.react-steps { margin-bottom: 1.5rem; font-family: monospace; color: var(--text-muted); background: var(--card); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); display: none; }
+.react-step { opacity: 0.5; margin-bottom: 0.3rem; transition: opacity 0.3s; }
+.react-step.active { opacity: 1; color: var(--primary); font-weight: bold; }
+
+/* Results */
+.results { display: flex; flex-direction: column; gap: 1rem; }
+.def-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; animation: fadeSlideUp 0.3s ease backwards; border-left: 4px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.def-card.noun { border-left-color: #185FA5; }
+.def-card.verb { border-left-color: #1D9E75; }
+.def-card.adj { border-left-color: #EF9F27; }
+.def-card.other { border-left-color: #888780; }
+.def-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+.def-title { font-size: 1.25rem; font-weight: bold; }
+.def-badge { font-size: 0.8rem; background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--border); }
+.def-meaning { margin-bottom: 0.5rem; }
+.def-translation { font-weight: bold; color: var(--primary); margin-bottom: 1rem; }
+.def-example { background: var(--bg); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 3px solid var(--border); }
+.def-actions { display: flex; gap: 0.5rem; }
+.action-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-family: 'Inter', sans-serif;}
+.action-btn:hover { background: var(--border); }
+
+/* Related Words */
+.related-words { margin-top: 2rem; padding: 1rem; background: var(--card); border-radius: 12px; border: 1px solid var(--border); display: none; }
+.related-words h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+.related-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.related-tag { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.8rem; border-radius: 16px; cursor: pointer; font-size: 0.9rem; }
+.related-tag:hover { background: var(--border); }
+
+/* Ads */
+.ad-slot { min-height: 90px; background: var(--card); border: 1px dashed var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 12px; margin: 1rem 0; }
+
+/* Saved Panel */
+.saved-panel { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); padding: 1rem; z-index: 50; height: 50vh; display: flex; flex-direction: column; transform: translateY(calc(100% - 60px)); transition: transform 0.3s ease; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); }
+.saved-panel.open { transform: translateY(0); }
+.saved-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; height: 40px; font-weight: bold; }
+.saved-content { overflow-y: auto; margin-top: 1rem; flex: 1; border-top: 1px solid var(--border); padding-top: 1rem;}
+.saved-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.saved-actions { margin-top: 1rem; display: flex; gap: 1rem; }
+
+/* Quiz Modal */
+.quiz-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 200; padding: 2rem; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.quiz-modal.active { display: flex; }
+.quiz-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; max-width: 500px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.1); position: relative;}
+.quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+.quiz-option { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 1rem; border-radius: 8px; cursor: pointer; font-size: 1rem;}
+.quiz-option:hover { background: var(--primary); color: white; }
+.quiz-input { width: 100%; padding: 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); margin-top: 1rem; font-size: 1.1rem; }
+.close-quiz { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: var(--text-muted); }
+.btn { background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; font-size: 1rem; font-family: 'Inter', sans-serif;}
+.btn:hover { opacity: 0.9; }
+
+/* Footer */
+footer { margin-top: 4rem; padding: 2rem; background: var(--card); border-top: 1px solid var(--border); text-align: center; }
+.footer-links { margin-bottom: 1rem; }
+.footer-links a { margin: 0 0.5rem; }
+.resources-section { max-width: 800px; margin: 1rem auto; text-align: left; }
+.resources-summary { cursor: pointer; padding: 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-weight: bold; }
+.resources-content { padding: 1rem 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+.resource-group { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+.resource-group h4 { margin-bottom: 0.5rem; color: var(--primary); }
+.resource-group a { display: block; margin-bottom: 0.3rem; font-size: 0.9rem; color: var(--text); }
+.resource-group a:hover { text-decoration: underline; }
+
+@media (max-width: 600px) { 
+  header { flex-direction: column; gap: 1rem; } 
+  .header-right { flex-direction: column; width: 100%; } 
+  .search-container { flex-direction: column; } 
+  .quiz-options { grid-template-columns: 1fr; }
+  .saved-panel { height: 70vh; transform: translateY(calc(100% - 60px)); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <a href="index.html">🔵 DeutschDict</a>
+  </div>
+  <div class="header-center" id="learningProfile">
+    Beginner 🌱 | 0 words this week
+  </div>
+  <div class="header-right">
+    <select id="langSelect" class="lang-select">
+      <option value="uz">🇺🇿 Uzbek</option>
+      <option value="ru">🇷🇺 Russian</option>
+      <option value="ar">🇸🇦 Arabic</option>
+      <option value="zh">🇨🇳 Chinese</option>
+      <option value="hi">🇮🇳 Hindi</option>
+      <option value="es">🇪🇸 Spanish</option>
+      <option value="fr">🇫🇷 French</option>
+      <option value="pt">🇧🇷 Portuguese</option>
+      <option value="tr">🇹🇷 Turkish</option>
+      <option value="ja">🇯🇵 Japanese</option>
+      <option value="ko">🇰🇷 Korean</option>
+      <option value="id">🇮🇩 Indonesian</option>
+      <option value="bn">🇧🇩 Bengali</option>
+      <option value="ur">🇵🇰 Urdu</option>
+      <option value="it">🇮🇹 Italian</option>
+      <option value="pl">🇵🇱 Polish</option>
+      <option value="uk">🇺🇦 Ukrainian</option>
+      <option value="fa">🇮🇷 Persian</option>
+    </select>
+    <button id="themeToggle" class="theme-toggle">🌙</button>
+  </div>
+</header>
+
+<main>
+  <!-- Word of the Day -->
+  <div class="wotd-card" id="wotdCard">
+    <div style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; opacity: 0.8;">Word of the Day</div>
+    <h2 id="wotdWord">...</h2>
+    <div id="wotdMeaning" style="font-size: 1.1rem;">Loading...</div>
+    <div id="wotdTranslation" style="font-size: 1.2rem; font-weight: bold; margin: 0.5rem 0;"></div>
+    <div class="wotd-tip" id="wotdTip"></div>
+    <div>
+      <button class="wotd-btn" id="wotdPronounce">🔊 Pronounce</button>
+      <button class="wotd-btn" id="wotdSave" style="margin-left:0.5rem;">⭐ Add to My List</button>
+    </div>
+  </div>
+
+  <div class="in-context-memory" id="inContext"></div>
+
+  <!-- Search Area -->
+  <div class="search-container">
+    <input type="text" id="searchInput" class="search-input" placeholder="Type a German word... (e.g. Liebe, Haus, Zeit)" aria-label="Search word">
+    <button id="searchBtn" class="search-btn">Search</button>
+  </div>
+
+  <!-- Ad Slot 1 -->
+  <div class="ad-slot" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="SLOT1">
+    📢 Ad space — replace with your AdSense code
+  </div>
+
+  <!-- React Reasoning Steps -->
+  <div class="react-steps" id="reactSteps">
+    <div class="react-step" id="step1">Detecting input...</div>
+    <div class="react-step" id="step2">Fetching definitions from FreeDictionaryAPI...</div>
+    <div class="react-step" id="step3">Translating to user language via MyMemory...</div>
+    <div class="react-step" id="step4">Finding related words by semantic cluster...</div>
+    <div class="react-step" id="step5" style="margin-top:0.5rem; color:var(--primary); font-weight:bold;">Done!</div>
+  </div>
+
+  <div class="episodic-memory" id="episodicMemory"></div>
+
+  <!-- Results Area -->
+  <div class="results" id="results"></div>
+
+  <!-- Related Words Area -->
+  <div class="related-words" id="relatedWords">
+    <h3>Semantic Related Words</h3>
+    <div class="related-tags" id="relatedWordsContainer"></div>
+  </div>
+
+  <!-- Ad Slot 3 -->
+  <div class="ad-slot" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="SLOT3">
+    📢 Ad space — replace with your AdSense code
+  </div>
+</main>
+
+<footer>
+  <div class="footer-links">
+    <a href="index.html">Home</a>
+    <a href="about.html">About</a>
+    <a href="privacy-policy.html">Privacy Policy</a>
+  </div>
+  
+  <details class="resources-section">
+    <summary class="resources-summary">📚 Resources & Credits</summary>
+    <div class="resources-content">
+      <div class="resource-group">
+        <h4>📹 VIDEOS</h4>
+        <a href="https://www.youtube.com/watch?v=zjkBMFhNj_g" target="_blank">LLM Introduction</a>
+        <a href="https://www.youtube.com/watch?v=9vM4p9NN0Ts" target="_blank">LLMs from Scratch</a>
+        <a href="https://www.youtube.com/watch?v=kJLiOGle3Lw" target="_blank">Agentic AI Stanford</a>
+        <a href="https://www.youtube.com/watch?v=d5EltXhbcfA" target="_blank">Building Evaluating Agents</a>
+        <a href="https://www.youtube.com/watch?v=D7_ipDqhtwk" target="_blank">Building Effective Agents</a>
+        <a href="https://www.youtube.com/watch?v=kQmXtrmQ5Zg" target="_blank">Agents with MCP</a>
+        <a href="https://www.youtube.com/watch?v=xzXdLRUyjUg" target="_blank">Agent from Scratch</a>
+        <a href="https://www.youtube.com/playlist?list=PLacQJwuclt_sV-tfZmpT1Ov6jldHl30NR" target="_blank">Philo Agents</a>
+      </div>
+      <div class="resource-group">
+        <h4>🗂️ REPOS</h4>
+        <a href="https://github.com/nirdiamant/GenAI_Agents" target="_blank">GenAI Agents</a>
+        <a href="https://github.com/microsoft/ai-agents-for-beginners" target="_blank">AI Agents Beginners</a>
+        <a href="https://github.com/mlabonne/llm-course" target="_blank">LLM Course</a>
+        <a href="https://github.com/Sumanth077/Hands-On-AI-Engineering" target="_blank">Hands-On AI Engineering</a>
+      </div>
+      <div class="resource-group">
+        <h4>🗺️ GUIDES</h4>
+        <a href="https://lnkd.in/gRWKANS4" target="_blank">Building Effective Agents Anthropic</a>
+        <a href="https://lnkd.in/guRfXsFK" target="_blank">OpenAI Agents Guide</a>
+        <a href="https://lnkd.in/gFvCfbSN" target="_blank">Google Agent Whitepaper</a>
+        <a href="https://lnkd.in/gfmCrgAH" target="_blank">Google Agent Companion</a>
+        <a href="https://lnkd.in/gs99zyCf" target="_blank">Claude Code Practices</a>
+      </div>
+      <div class="resource-group">
+        <h4>📚 BOOKS</h4>
+        <a href="https://udlbook.github.io/udlbook/" target="_blank">Understanding Deep Learning</a>
+        <a href="https://lnkd.in/gWUT2EXe" target="_blank">LLM Engineering Handbook</a>
+        <a href="https://lnkd.in/dJ9wFNMD" target="_blank">AI Agents Definitive Guide</a>
+        <a href="https://lnkd.in/dSs8srk5" target="_blank">Building Apps with AI Agents</a>
+        <a href="https://lnkd.in/dR22bEiZ" target="_blank">AI Agents with MCP</a>
+        <a href="https://www.oreilly.com/library/view/ai-engineering/9781098166298/" target="_blank">AI Engineering OReilly</a>
+      </div>
+      <div class="resource-group">
+        <h4>📜 PAPERS</h4>
+        <a href="https://lnkd.in/gRBH3ZRq" target="_blank">ReAct</a>
+        <a href="https://lnkd.in/gGFMgjUj" target="_blank">Reflexion</a>
+        <a href="https://lnkd.in/gaK5CXzD" target="_blank">Chain-of-Thought</a>
+        <a href="https://lnkd.in/gGUqkkyR" target="_blank">RAG Survey</a>
+        <a href="https://lnkd.in/gsDCUsWm" target="_blank">Generative Agents</a>
+        <a href="https://lnkd.in/gRJdv_iU" target="_blank">Tree of Thoughts</a>
+        <a href="https://lnkd.in/gyzrege6" target="_blank">Toolformer</a>
+      </div>
+      <div class="resource-group">
+        <h4>🧑‍🏫 COURSES</h4>
+        <a href="https://lnkd.in/gmTftTXV" target="_blank">HuggingFace Agent Course</a>
+        <a href="https://lnkd.in/gNFpC542" target="_blank">Agent Memory</a>
+        <a href="https://lnkd.in/gzKvx5A4" target="_blank">Agent Design Patterns</a>
+        <a href="https://lnkd.in/gHJtwF5s" target="_blank">Evaluating AI Agents</a>
+        <a href="https://lnkd.in/geffcwdq" target="_blank">MCP with Anthropic</a>
+        <a href="https://lnkd.in/gUayts9s" target="_blank">Multi-Agent Systems</a>
+        <a href="https://lnkd.in/g2qC9-mh" target="_blank">Building RAG Apps</a>
+        <a href="https://lnkd.in/g7bHU37w" target="_blank">LLMOps</a>
+        <a href="https://lnkd.in/gsE-4FvY" target="_blank">Improving LLM Accuracy</a>
+      </div>
+      <div class="resource-group">
+        <h4>📩 NEWSLETTERS</h4>
+        <a href="https://lnkd.in/gZbZAeQW" target="_blank">Gradient Ascent</a>
+        <a href="https://lnkd.in/gpZPgk7J" target="_blank">DecodingML</a>
+        <a href="https://lnkd.in/gTUNcUVE" target="_blank">Deep Learning Focus</a>
+        <a href="https://blog.neosage.io/" target="_blank">NeoSage</a>
+        <a href="https://lnkd.in/gZpdTTYD" target="_blank">Data Hustle</a>
+      </div>
+    </div>
+  </details>
+</footer>
+
+<!-- Saved Panel -->
+<div class="saved-panel" id="savedPanel">
+  <div class="saved-header" onclick="document.getElementById('savedPanel').classList.toggle('open')">
+    <span>⭐ Saved (<span id="savedCount">0</span> words)</span>
+    <span>▲ / ▼</span>
+  </div>
+  <div class="saved-actions">
+    <button class="btn" onclick="startQuiz()">🧪 Quiz These</button>
+    <button class="btn" style="background:var(--bg); color:var(--text); border:1px solid var(--border)" onclick="exportWords()">📤 Export .txt</button>
+  </div>
+  <div class="saved-content" id="savedList"></div>
+</div>
+
+<!-- Quiz Modal -->
+<div class="quiz-modal" id="quizModal">
+  <div class="quiz-card">
+    <button class="close-quiz" onclick="document.getElementById('quizModal').classList.remove('active')">&times;</button>
+    <div id="quizContent"></div>
+  </div>
+</div>
+
+<script>
+const langs = {
+  uz:'🇺🇿', ru:'🇷🇺', ar:'🇸🇦', zh:'🇨🇳', hi:'🇮🇳', es:'🇪🇸',
+  fr:'🇫🇷', pt:'🇧🇷', tr:'🇹🇷', ja:'🇯🇵', ko:'🇰🇷', id:'🇮🇩',
+  bn:'🇧🇩', ur:'🇵🇰', it:'🇮🇹', pl:'🇵🇱', uk:'🇺🇦', fa:'🇮🇷'
+};
+
+const clusters = {
+  family: ['Mutter', 'Vater', 'Kind', 'Geschwister', 'Familie'],
+  food: ['Essen', 'Trinken', 'Brot', 'Wasser', 'Milch', 'Fleisch'],
+  time: ['Zeit', 'Tag', 'Nacht', 'Woche', 'Monat', 'Jahr', 'Stunde'],
+  transport: ['Auto', 'Zug', 'Bus', 'Flugzeug', 'Fahrrad', 'Schiff'],
+  city: ['Straße', 'Haus', 'Wohnung', 'Stadt', 'Bahnhof', 'Markt'],
+  nature: ['Sonne', 'Regen', 'Wind', 'Berg', 'Wald', 'Fluss', 'Meer'],
+  body: ['Kopf', 'Hand', 'Herz', 'Auge', 'Ohr', 'Mund', 'Bein'],
+  work: ['Arbeit', 'Büro', 'Chef', 'Kollege', 'Gehalt', 'Meeting'],
+  school: ['Schule', 'Lehrer', 'Buch', 'Stift', 'Klasse', 'Prüfung'],
+  feelings: ['Liebe', 'Freude', 'Angst', 'Trauer', 'Wut', 'Glück']
+};
+
+const wordList = [
+  'Hallo','Danke','Bitte','Entschuldigung','Wasser','Essen','Trinken',
+  'Haus','Wohnung','Straße','Stadt','Land','Auto','Zug','Bus','Schule',
+  'Arbeit','Geld','Zeit','Tag','Nacht','Woche','Monat','Jahr','Familie',
+  'Mutter','Vater','Kind','Freund','Liebe','Herz','Leben','Tod',
+  'Gesundheit','Krank','Arzt','Medizin','Buch','Musik','Film','Sport',
+  'Fußball','Reise','Urlaub','Hotel','Flugzeug','Wetter','Sonne','Regen',
+  'Wind','Schnee','Heiß','Kalt','Groß','Klein','Gut','Schlecht','Schön',
+  'Neu','Alt','Schnell','Langsam','Viel','Wenig','Ja','Nein','Wo','Was',
+  'Wer','Wie','Warum','Wann','Hilfe','Polizei','Krankenhaus','Apotheke',
+  'Restaurant','Supermarkt','Bank','Bahnhof','Flughafen','Strand','Berg',
+  'Wald','Fluss','Tier','Hund','Katze','Vogel','Fisch','Blume','Baum',
+  'Farbe','Rot','Blau','Grün','Schwarz','Weiß'
+];
+
+let savedWords = JSON.parse(localStorage.getItem('savedWords') || '[]');
+let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+let reflections = JSON.parse(localStorage.getItem('reflections') || '[]');
+let currentLang = localStorage.getItem('lang') || 'uz';
+
+const langSelect = document.getElementById('langSelect');
+const themeToggle = document.getElementById('themeToggle');
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const resultsDiv = document.getElementById('results');
+const reactSteps = document.getElementById('reactSteps');
+const inContext = document.getElementById('inContext');
+const learningProfile = document.getElementById('learningProfile');
+const savedCount = document.getElementById('savedCount');
+const savedList = document.getElementById('savedList');
+
+function init() {
+  langSelect.value = currentLang;
+  langSelect.addEventListener('change', (e) => {
+    currentLang = e.target.value;
+    localStorage.setItem('lang', currentLang);
+    renderWOTD();
+  });
+  
+  let isDark = localStorage.getItem('theme') === 'dark';
+  if(isDark) document.documentElement.setAttribute('data-theme', 'dark');
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
+  themeToggle.addEventListener('click', () => {
+    isDark = !isDark;
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
+  });
+
+  searchBtn.addEventListener('click', () => handleSearch(searchInput.value));
+  searchInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleSearch(searchInput.value) });
+  
+  updateProfile();
+  renderSaved();
+  renderWOTD();
+  updateInContext();
+}
+
+function updateProfile() {
+  const count = savedWords.length;
+  let level = "Beginner 🌱";
+  if(count >= 11) level = "Intermediate 🌿";
+  if(count >= 51) level = "Advanced 🌳";
+  learningProfile.textContent = `${level} | ${count} words learned this week`;
+  savedCount.textContent = count;
+}
+
+function updateInContext() {
+  if (searchHistory.length > 0) {
+    const recent = searchHistory.slice(-5).map(x=>x.word).join(', ');
+    inContext.textContent = `📝 Recent searches: ${recent}`;
+  }
+}
+
+function saveWord(word, translation, example) {
+  if(!savedWords.find(w => w.word === word)) {
+    savedWords.push({word, translation, example, date: new Date().toLocaleDateString(), score: 0});
+    localStorage.setItem('savedWords', JSON.stringify(savedWords));
+    updateProfile();
+    renderSaved();
+    alert(`⭐ ${word} saved!`);
+    if(savedWords.length >= 3 && savedWords.length % 3 === 0) {
+      setTimeout(startQuiz, 1000);
+    }
+  } else {
+    alert(`Already saved ${word}`);
+  }
+}
+
+function removeWord(word) {
+  savedWords = savedWords.filter(w => w.word !== word);
+  localStorage.setItem('savedWords', JSON.stringify(savedWords));
+  updateProfile();
+  renderSaved();
+}
+
+function renderSaved() {
+  savedList.innerHTML = '';
+  savedWords.forEach(w => {
+    const div = document.createElement('div');
+    div.className = 'saved-item';
+    div.innerHTML = `
+      <div><strong>${w.word}</strong> - ${w.translation} <small style="color:var(--text-muted); font-size:0.8rem">(${w.date})</small></div>
+      <button class="action-btn" onclick="removeWord('${w.word.replace(/'/g,"\\'")}')">🗑</button>
+    `;
+    savedList.appendChild(div);
+  });
+}
+
+async function translate(text) {
+  if(!text) return '';
+  try {
+    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=de|${currentLang}`);
+    const data = await res.json();
+    return data.responseData.translatedText;
+  } catch(e) { return text; }
+}
+
+function pronounce(word) {
+  const u = new SpeechSynthesisUtterance(word);
+  u.lang = 'de-DE';
+  speechSynthesis.speak(u);
+}
+
+async function renderWOTD() {
+  const day = Math.floor(Date.now() / 86400000);
+  const word = wordList[day % wordList.length];
+  try {
+    const res = await fetch(`https://api.freedictionaryapi.com/api/v2/entries/de/${word}`);
+    if(!res.ok) throw new Error("not found");
+    const data = await res.json();
+    const meaning = data[0].meanings[0].definitions[0].definition;
+    const translation = await translate(meaning);
+    const wTranslation = await translate(word);
+    
+    document.getElementById('wotdWord').textContent = `${word} ${data[0].meanings[0].partOfSpeech ? '<span class="wotd-badge">'+data[0].meanings[0].partOfSpeech+'</span>' : ''}`;
+    document.getElementById('wotdWord').innerHTML = `${word} <span class="wotd-badge">${data[0].meanings[0].partOfSpeech || 'word'}</span>`;
+    document.getElementById('wotdMeaning').textContent = `📖 ${meaning}`;
+    document.getElementById('wotdTranslation').textContent = `${langs[currentLang] || '🌐'} ${wTranslation} - ${translation}`;
+    document.getElementById('wotdTip').textContent = `💡 This word appears in 94% of everyday conversations`;
+    
+    document.getElementById('wotdPronounce').onclick = () => pronounce(word);
+    document.getElementById('wotdSave').onclick = () => saveWord(word, wTranslation, meaning);
+  } catch(e) {
+    document.getElementById('wotdWord').textContent = word;
+    document.getElementById('wotdMeaning').textContent = "Definition could not be loaded.";
+  }
+}
+
+async function handleSearch(word) {
+  word = word.trim();
+  if(!word) return;
+  
+  reactSteps.style.display = 'block';
+  resultsDiv.innerHTML = '';
+  document.getElementById('relatedWords').style.display = 'none';
+  
+  const steps = [
+    document.getElementById('step1'),
+    document.getElementById('step2'),
+    document.getElementById('step3'),
+    document.getElementById('step4'),
+    document.getElementById('step5')
+  ];
+  steps.forEach(s => s.className = 'react-step');
+  
+  steps[0].className = 'react-step active'; // Detect
+  await new Promise(r => setTimeout(r, 300));
+  
+  steps[1].className = 'react-step active'; // Fetch
+  
+  let isMultiple = word.includes(' ');
+  let data;
+  let translatedInput;
+  
+  if(isMultiple) {
+    translatedInput = await translate(word);
+    data = [{ word: word, meanings: [{ partOfSpeech: 'phrase', definitions: [{ definition: 'Direct translation', example: word }] }] }];
+  } else {
+    try {
+      const res = await fetch(`https://api.freedictionaryapi.com/api/v2/entries/de/${word}`);
+      if(!res.ok) throw new Error("Not found");
+      data = await res.json();
+    } catch(e) {
+      try {
+        const res2 = await fetch(`https://en.wiktionary.org/api/rest_v1/page/definition/${word}`);
+        if(!res2.ok) throw new Error("Wiktionary fail");
+        const wikidata = await res2.json();
+        const def = wikidata.de[0].definitions[0].definition.replace(/<[^>]+>/g, '');
+        data = [{ word: word, meanings: [{ partOfSpeech: 'other', definitions: [{ definition: def }] }] }];
+      } catch(e2) {
+        reactSteps.style.display = 'none';
+        resultsDiv.innerHTML = `<div class="def-card">Word not found. Try another word.</div>`;
+        return;
+      }
+    }
+  }
+  
+  steps[2].className = 'react-step active'; // Translate
+  
+  const lastSearch = searchHistory.find(x => x.word.toLowerCase() === word.toLowerCase());
+  if(lastSearch) {
+    const diffDays = Math.floor((new Date() - new Date(lastSearch.dateTS)) / (1000 * 60 * 60 * 24));
+    const ago = diffDays === 0 ? "today" : `${diffDays} days ago`;
+    document.getElementById('episodicMemory').innerHTML = `📚 Searched ${lastSearch.count + 1} times — last: ${ago}`;
+    lastSearch.count++;
+    lastSearch.dateTS = new Date().getTime();
+  } else {
+    document.getElementById('episodicMemory').innerHTML = '';
+    searchHistory.push({word, dateTS: new Date().getTime(), count: 1});
+  }
+  localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+  updateInContext();
+
+  let cardsHtml = '';
+  let idx = 0;
+  
+  for(const entry of data) {
+    for(const meaning of entry.meanings) {
+      for(const def of meaning.definitions.slice(0, 2)) {
+        let tDef = isMultiple ? translatedInput : await translate(def.definition);
+        let ex = def.example || '';
+        let tEx = ex ? await translate(ex) : '';
+        let wTrans = await translate(entry.word);
+        
+        let posClass = 'other';
+        let badgeColor = '#888780';
+        if(meaning.partOfSpeech.includes('noun')) { posClass = 'noun'; badgeColor = '#185FA5'; }
+        else if(meaning.partOfSpeech.includes('verb')) { posClass = 'verb'; badgeColor = '#1D9E75'; }
+        else if(meaning.partOfSpeech.includes('adj')) { posClass = 'adj'; badgeColor = '#EF9F27'; }
+
+        cardsHtml += `
+          <div class="def-card ${posClass}" style="animation-delay: ${idx * 0.1}s">
+            <div class="def-header">
+              <span class="def-title">${entry.word}</span>
+              <span class="def-badge" style="color: ${badgeColor}; border-color: ${badgeColor}">${meaning.partOfSpeech}</span>
+            </div>
+            <div class="def-meaning">📖 ${def.definition}</div>
+            <div class="def-translation">🌐 ${langs[currentLang] || ''} ${wTrans} - ${tDef}</div>
+            ${ex ? `<div class="def-example">💬 ${ex}<br>→ ${langs[currentLang] || ''} ${tEx}</div>` : ''}
+            <div class="def-actions">
+              <button class="action-btn" onclick="pronounce('${entry.word.replace(/'/g,"\\'")}')">🔊 Pronounce</button>
+              <button class="action-btn" onclick="saveWord('${entry.word.replace(/'/g,"\\'")}', '${wTrans.replace(/'/g,"\\'")}', '${ex.replace(/'/g,"\\'")}')">⭐ Save</button>
+              <button class="action-btn" onclick="navigator.clipboard.writeText('${entry.word}')">📋 Copy</button>
+            </div>
+          </div>
+        `;
+        idx++;
+      }
+    }
+  }
+  
+  steps[3].className = 'react-step active'; // Clusters
+  
+  let related = [];
+  for(let c in clusters) {
+    if(clusters[c].map(x=>x.toLowerCase()).includes(word.toLowerCase())) {
+      related = clusters[c].filter(x => x.toLowerCase() !== word.toLowerCase()).slice(0,3);
+      break;
+    }
+  }
+  if(!related.length) {
+    related = wordList.sort(()=>0.5-Math.random()).slice(0,3);
+  }
+  document.getElementById('relatedWordsContainer').innerHTML = related.map(w => `<button class="related-tag" onclick="document.getElementById('searchInput').value='${w}';handleSearch('${w}')">${w}</button>`).join('');
+  document.getElementById('relatedWords').style.display = 'block';
+
+  steps[4].className = 'react-step active'; // Done
+  
+  setTimeout(() => {
+    reactSteps.style.display = 'none';
+    resultsDiv.innerHTML = cardsHtml;
+    
+    // Ad slot 2 after second card
+    if(idx > 1) {
+      const adHTML = `<div class="ad-slot" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="SLOT2">📢 Ad space — replace with your AdSense code</div>`;
+      const cards = resultsDiv.querySelectorAll('.def-card');
+      if(cards.length > 1) {
+        cards[1].insertAdjacentHTML('afterend', adHTML);
+      }
+    }
+  }, 400);
+}
+
+// Quiz System (Reflexion)
+let quizQueue = [];
+let currentQ = 0;
+let correctCount = 0;
+
+function startQuiz() {
+  if(savedWords.length < 3) return alert("Save at least 3 words to quiz!");
+  document.getElementById('quizModal').classList.add('active');
+  
+  let weakWords = [...savedWords].sort((a,b) => a.score - b.score);
+  quizQueue = weakWords.slice(0, 5);
+  currentQ = 0;
+  correctCount = 0;
+  
+  let note = '';
+  if(reflections.length > 0) {
+    let r = reflections[Math.floor(Math.random() * reflections.length)];
+    note = `<div class="def-example" style="border-left-color:#EF9F27; text-align:left; margin-bottom:1rem">🧠 <strong>Reflection:</strong> Remember that <em>${r.word}</em> means <em>${r.correct}</em>, not <em>${r.wrong}</em></div>`;
+  }
+  
+  nextQuestion(note);
+}
+
+function nextQuestion(note = '') {
+  if(currentQ >= quizQueue.length) {
+    endQuiz();
+    return;
+  }
+  
+  let q = quizQueue[currentQ];
+  let type = Math.random() > 0.5 ? 'type' : 'choice';
+  
+  let html = note;
+  if(type === 'type') {
+    html += `<h3 style="margin-bottom:0.5rem">What is the German word for:</h3><p class="def-translation" style="font-size:1.5rem">${q.translation}</p>
+             <input type="text" id="quizInput" class="quiz-input" placeholder="Type in German..." autocomplete="off">
+             <button class="btn" style="margin-top:1rem; width:100%" onclick="checkQuizType('${q.word.replace(/'/g,"\\'")}')">Submit</button>`;
+  } else {
+    let options = [q];
+    let others = savedWords.filter(x => x.word !== q.word).sort(()=>0.5-Math.random()).slice(0,3);
+    while(others.length < 3) others.push({word: 'Random'+Math.random(), translation: 'Another word meaning ' + Math.floor(Math.random()*100)});
+    options = options.concat(others).sort(()=>0.5-Math.random());
+    
+    html += `<h3 style="margin-bottom:0.5rem">Select the meaning of:</h3><p style="font-size:1.8rem; font-weight:bold; margin-bottom:1rem">${q.word}</p>
+             <div class="quiz-options">
+               ${options.map(o => `<button class="quiz-option" onclick="checkQuizChoice('${q.word.replace(/'/g,"\\'")}', '${o.word.replace(/'/g,"\\'")}', '${q.translation.replace(/'/g,"\\'")}', '${o.translation.replace(/'/g,"\\'")}')">${o.translation}</button>`).join('')}
+             </div>`;
+  }
+  
+  document.getElementById('quizContent').innerHTML = html;
+  if(type === 'type') setTimeout(()=>document.getElementById('quizInput').focus(), 100);
+}
+
+function handleWrong(word, wrongGuess, correctTrans) {
+  let w = savedWords.find(x => x.word === word);
+  if(w) { w.score -= 1; localStorage.setItem('savedWords', JSON.stringify(savedWords)); }
+  reflections.push({word, correct: correctTrans, wrong: wrongGuess, date: new Date().getTime()});
+  if(reflections.length > 20) reflections.shift();
+  localStorage.setItem('reflections', JSON.stringify(reflections));
+}
+
+function handleRight(word) {
+  let w = savedWords.find(x => x.word === word);
+  if(w) { w.score += 1; localStorage.setItem('savedWords', JSON.stringify(savedWords)); }
+  correctCount++;
+}
+
+function checkQuizType(correctWord) {
+  let val = document.getElementById('quizInput').value.trim();
+  let q = quizQueue[currentQ];
+  if(val.toLowerCase() === correctWord.toLowerCase()) {
+    handleRight(correctWord);
+    currentQ++;
+    nextQuestion(`<div style="color:#1D9E75; margin-bottom:1rem; font-weight:bold; font-size:1.2rem">✅ Correct!</div>`);
+  } else {
+    handleWrong(correctWord, val || 'nothing', q.translation);
+    currentQ++;
+    nextQuestion(`<div style="color:#EF9F27; margin-bottom:1rem; font-weight:bold; font-size:1.2rem">❌ Incorrect! ${correctWord} means ${q.translation}</div>`);
+  }
+}
+
+function checkQuizChoice(correctWord, selectedWord, correctTrans, selectedTrans) {
+  if(correctWord === selectedWord) {
+    handleRight(correctWord);
+    currentQ++;
+    nextQuestion(`<div style="color:#1D9E75; margin-bottom:1rem; font-weight:bold; font-size:1.2rem">✅ Correct!</div>`);
+  } else {
+    handleWrong(correctWord, selectedTrans, correctTrans);
+    currentQ++;
+    nextQuestion(`<div style="color:#EF9F27; margin-bottom:1rem; font-weight:bold; font-size:1.2rem">❌ Incorrect! ${correctWord} means ${correctTrans}</div>`);
+  }
+}
+
+function endQuiz() {
+  let score = Math.round((correctCount/quizQueue.length)*100);
+  let emoji = score === 100 ? '🏆' : score > 50 ? '👍' : '💪';
+  
+  document.getElementById('quizContent').innerHTML = `
+    <h2>Quiz Complete! ${emoji}</h2>
+    <p style="font-size:2.5rem; font-weight:bold; color:var(--primary); margin:1rem 0">${correctCount} / ${quizQueue.length}</p>
+    <p style="font-weight:bold; color:#EF9F27">🔥 1 day streak!</p>
+    <button class="btn" style="margin-top:2rem" onclick="document.getElementById('quizModal').classList.remove('active')">Close</button>
+  `;
+}
+
+function exportWords() {
+  if(savedWords.length === 0) return alert('No words saved.');
+  let text = savedWords.map(w => `${w.word} - ${w.translation}`).join('\n');
+  let blob = new Blob([text], {type: "text/plain"});
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  a.download = "deutschdict_words.txt";
+  a.click();
+}
+
+window.onload = init;
+</script>
+</body>
+</html>

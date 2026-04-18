@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://munissulaymon.github.io/DeutschDict/sitemap.xml
