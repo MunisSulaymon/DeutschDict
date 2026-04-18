@@ -439,69 +439,110 @@ const wordList = [
   'Farbe','Rot','Blau','Grün','Schwarz','Weiß'
 ];
 
-let savedWords = JSON.parse(localStorage.getItem('savedWords') || '[]');
-let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
-let reflections = JSON.parse(localStorage.getItem('reflections') || '[]');
-let currentLang = localStorage.getItem('lang') || 'uz';
+// FAULT-TOLERANT LOCALSTORAGE PARSING
+let savedWords = [];
+let searchHistory = [];
+let reflections = [];
+let currentLang = 'uz';
 
-const langSelect = document.getElementById('langSelect');
-const themeToggle = document.getElementById('themeToggle');
-const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
-const resultsDiv = document.getElementById('results');
-const reactSteps = document.getElementById('reactSteps');
-const inContext = document.getElementById('inContext');
-const learningProfile = document.getElementById('learningProfile');
-const savedCount = document.getElementById('savedCount');
-const savedList = document.getElementById('savedList');
+try {
+  const s = localStorage.getItem('savedWords');
+  if(s && s !== 'undefined' && s !== 'null') savedWords = JSON.parse(s);
+  
+  const h = localStorage.getItem('searchHistory');
+  if(h && h !== 'undefined' && h !== 'null') searchHistory = JSON.parse(h);
+  
+  const r = localStorage.getItem('reflections');
+  if(r && r !== 'undefined' && r !== 'null') reflections = JSON.parse(r);
+  
+  currentLang = localStorage.getItem('lang') || 'uz';
+} catch(e) {
+  console.error("Corrupt localStorage data. Resetting to defaults.", e);
+  savedWords = [];
+  searchHistory = [];
+  reflections = [];
+}
+
+const safeSave = (key, val) => {
+  try { localStorage.setItem(key, JSON.stringify(val)); } 
+  catch(e) { console.error("Could not save to localStorage", e); }
+};
+
+const el = (id) => document.getElementById(id);
 
 function init() {
-  langSelect.value = currentLang;
-  langSelect.addEventListener('change', (e) => {
-    currentLang = e.target.value;
-    localStorage.setItem('lang', currentLang);
+  try {
+    const langSelect = el('langSelect');
+    if(langSelect) {
+      langSelect.value = currentLang;
+      langSelect.addEventListener('change', (e) => {
+        currentLang = e.target.value;
+        try { localStorage.setItem('lang', currentLang); } catch(e){}
+        renderWOTD();
+      });
+    }
+    
+    const themeToggle = el('themeToggle');
+    let isDark = false;
+    try { isDark = localStorage.getItem('theme') === 'dark'; } catch(e){}
+    
+    if(isDark) document.documentElement.setAttribute('data-theme', 'dark');
+    if(themeToggle) {
+      themeToggle.textContent = isDark ? '☀️' : '🌙';
+      themeToggle.addEventListener('click', () => {
+        isDark = !isDark;
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch(e){}
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+      });
+    }
+
+    const searchBtn = el('searchBtn');
+    const searchInput = el('searchInput');
+    if(searchBtn && searchInput) {
+      searchBtn.addEventListener('click', () => handleSearch(searchInput.value));
+      searchInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleSearch(searchInput.value) });
+    }
+    
+    updateProfile();
+    renderSaved();
     renderWOTD();
-  });
-  
-  let isDark = localStorage.getItem('theme') === 'dark';
-  if(isDark) document.documentElement.setAttribute('data-theme', 'dark');
-  themeToggle.textContent = isDark ? '☀️' : '🌙';
-  themeToggle.addEventListener('click', () => {
-    isDark = !isDark;
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    themeToggle.textContent = isDark ? '☀️' : '🌙';
-  });
-
-  searchBtn.addEventListener('click', () => handleSearch(searchInput.value));
-  searchInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleSearch(searchInput.value) });
-  
-  updateProfile();
-  renderSaved();
-  renderWOTD();
-  updateInContext();
-}
-
-function updateProfile() {
-  const count = savedWords.length;
-  let level = "Beginner 🌱";
-  if(count >= 11) level = "Intermediate 🌿";
-  if(count >= 51) level = "Advanced 🌳";
-  learningProfile.textContent = `${level} | ${count} words learned this week`;
-  savedCount.textContent = count;
-}
-
-function updateInContext() {
-  if (searchHistory.length > 0) {
-    const recent = searchHistory.slice(-5).map(x=>x.word).join(', ');
-    inContext.textContent = `📝 Recent searches: ${recent}`;
+    updateInContext();
+  } catch(e) {
+    console.error("Initialization error:", e);
   }
 }
 
-function saveWord(word, translation, example) {
+function updateProfile() {
+  try {
+    const learningProfile = el('learningProfile');
+    const savedCount = el('savedCount');
+    if(!learningProfile || !savedCount) return;
+
+    const count = savedWords.length;
+    let level = "Beginner 🌱";
+    if(count >= 11) level = "Intermediate 🌿";
+    if(count >= 51) level = "Advanced 🌳";
+    learningProfile.textContent = `${level} | ${count} words learned`;
+    savedCount.textContent = count;
+  } catch(e) {}
+}
+
+function updateInContext() {
+  try {
+    const inContext = el('inContext');
+    if(!inContext) return;
+    if (searchHistory.length > 0) {
+      const recent = searchHistory.slice(-5).map(x=>x.word).join(', ');
+      inContext.textContent = `📝 Recent searches: ${recent}`;
+    }
+  } catch(e){}
+}
+
+window.saveWord = function(word, translation, example) {
   if(!savedWords.find(w => w.word === word)) {
     savedWords.push({word, translation, example, date: new Date().toLocaleDateString(), score: 0});
-    localStorage.setItem('savedWords', JSON.stringify(savedWords));
+    safeSave('savedWords', savedWords);
     updateProfile();
     renderSaved();
     alert(`⭐ ${word} saved!`);
@@ -511,23 +552,26 @@ function saveWord(word, translation, example) {
   } else {
     alert(`Already saved ${word}`);
   }
-}
+};
 
-function removeWord(word) {
+window.removeWord = function(word) {
   savedWords = savedWords.filter(w => w.word !== word);
-  localStorage.setItem('savedWords', JSON.stringify(savedWords));
+  safeSave('savedWords', savedWords);
   updateProfile();
   renderSaved();
-}
+};
 
 function renderSaved() {
+  const savedList = el('savedList');
+  if(!savedList) return;
   savedList.innerHTML = '';
   savedWords.forEach(w => {
     const div = document.createElement('div');
     div.className = 'saved-item';
+    const safeWord = w.word.replace(/'/g, "\\'");
     div.innerHTML = `
       <div><strong>${w.word}</strong> - ${w.translation} <small style="color:var(--text-muted); font-size:0.8rem">(${w.date})</small></div>
-      <button class="action-btn" onclick="removeWord('${w.word.replace(/'/g,"\\'")}')">🗑</button>
+      <button class="action-btn" onclick="removeWord('${safeWord}')">🗑</button>
     `;
     savedList.appendChild(div);
   });
@@ -537,63 +581,97 @@ async function translate(text) {
   if(!text) return '';
   try {
     const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=de|${currentLang}`);
+    if(!res.ok) throw new Error("Translation API failed");
     const data = await res.json();
-    return data.responseData.translatedText;
-  } catch(e) { return text; }
+    if(data && data.responseData && data.responseData.translatedText) {
+      return data.responseData.translatedText;
+    }
+    return text;
+  } catch(e) { 
+    console.error("Translation error", e);
+    return text; 
+  }
 }
 
-function pronounce(word) {
-  const u = new SpeechSynthesisUtterance(word);
-  u.lang = 'de-DE';
-  speechSynthesis.speak(u);
-}
+window.pronounce = function(word) {
+  try {
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = 'de-DE';
+    speechSynthesis.speak(u);
+  } catch(e) {
+    console.error("Speech Synthesis not supported", e);
+  }
+};
 
 async function renderWOTD() {
+  const wotdWord = el('wotdWord');
+  const wotdMeaning = el('wotdMeaning');
+  if(!wotdWord || !wotdMeaning) return;
+
   const day = Math.floor(Date.now() / 86400000);
   const word = wordList[day % wordList.length];
+  
   try {
     const res = await fetch(`https://api.freedictionaryapi.com/api/v2/entries/de/${word}`);
     if(!res.ok) throw new Error("not found");
     const data = await res.json();
-    const meaning = data[0].meanings[0].definitions[0].definition;
+    
+    let meaning = "No definition found.";
+    let pos = "word";
+    if(data && data[0] && data[0].meanings && data[0].meanings[0]) {
+       pos = data[0].meanings[0].partOfSpeech || 'word';
+       if(data[0].meanings[0].definitions && data[0].meanings[0].definitions[0]) {
+         meaning = data[0].meanings[0].definitions[0].definition;
+       }
+    }
+
     const translation = await translate(meaning);
     const wTranslation = await translate(word);
     
-    document.getElementById('wotdWord').textContent = `${word} ${data[0].meanings[0].partOfSpeech ? '<span class="wotd-badge">'+data[0].meanings[0].partOfSpeech+'</span>' : ''}`;
-    document.getElementById('wotdWord').innerHTML = `${word} <span class="wotd-badge">${data[0].meanings[0].partOfSpeech || 'word'}</span>`;
-    document.getElementById('wotdMeaning').textContent = `📖 ${meaning}`;
-    document.getElementById('wotdTranslation').textContent = `${langs[currentLang] || '🌐'} ${wTranslation} - ${translation}`;
-    document.getElementById('wotdTip').textContent = `💡 This word appears in 94% of everyday conversations`;
+    wotdWord.innerHTML = `${word} <span class="wotd-badge">${pos}</span>`;
+    wotdMeaning.textContent = `📖 ${meaning}`;
     
-    document.getElementById('wotdPronounce').onclick = () => pronounce(word);
-    document.getElementById('wotdSave').onclick = () => saveWord(word, wTranslation, meaning);
+    const transEl = el('wotdTranslation');
+    if(transEl) transEl.textContent = `${langs[currentLang] || '🌐'} ${wTranslation} - ${translation}`;
+    
+    const tipEl = el('wotdTip');
+    if(tipEl) tipEl.textContent = `💡 This word appears frequently in everyday conversations`;
+    
+    const pronEl = el('wotdPronounce');
+    if(pronEl) pronEl.onclick = () => pronounce(word);
+    
+    const saveEl = el('wotdSave');
+    const safeWord = word.replace(/'/g, "\\'");
+    const safeWTrans = wTranslation.replace(/'/g, "\\'");
+    const safeMeaning = meaning.replace(/'/g, "\\'");
+    if(saveEl) saveEl.onclick = () => saveWord(safeWord, safeWTrans, safeMeaning);
   } catch(e) {
-    document.getElementById('wotdWord').textContent = word;
-    document.getElementById('wotdMeaning').textContent = "Definition could not be loaded.";
+    console.error("WOTD error", e);
+    wotdWord.textContent = word;
+    wotdMeaning.textContent = "Definition could not be loaded.";
   }
 }
 
-async function handleSearch(word) {
+window.handleSearch = async function(word) {
+  if(!word || typeof word !== 'string') return;
   word = word.trim();
   if(!word) return;
   
-  reactSteps.style.display = 'block';
-  resultsDiv.innerHTML = '';
-  document.getElementById('relatedWords').style.display = 'none';
+  const reactSteps = el('reactSteps');
+  const resultsDiv = el('resultsDiv') || el('results');
+  const relatedWords = el('relatedWords');
   
-  const steps = [
-    document.getElementById('step1'),
-    document.getElementById('step2'),
-    document.getElementById('step3'),
-    document.getElementById('step4'),
-    document.getElementById('step5')
-  ];
-  steps.forEach(s => s.className = 'react-step');
+  if(reactSteps) reactSteps.style.display = 'block';
+  if(resultsDiv) resultsDiv.innerHTML = '';
+  if(relatedWords) relatedWords.style.display = 'none';
   
-  steps[0].className = 'react-step active'; // Detect
+  const steps = [1,2,3,4,5].map(i => el(`step${i}`));
+  steps.forEach(s => { if(s) s.className = 'react-step'; });
+  
+  if(steps[0]) steps[0].className = 'react-step active'; // Detect
   await new Promise(r => setTimeout(r, 300));
   
-  steps[1].className = 'react-step active'; // Fetch
+  if(steps[1]) steps[1].className = 'react-step active'; // Fetch
   
   let isMultiple = word.includes(' ');
   let data;
@@ -612,71 +690,85 @@ async function handleSearch(word) {
         const res2 = await fetch(`https://en.wiktionary.org/api/rest_v1/page/definition/${word}`);
         if(!res2.ok) throw new Error("Wiktionary fail");
         const wikidata = await res2.json();
-        const def = wikidata.de[0].definitions[0].definition.replace(/<[^>]+>/g, '');
-        data = [{ word: word, meanings: [{ partOfSpeech: 'other', definitions: [{ definition: def }] }] }];
+        if(wikidata && wikidata.de && wikidata.de[0] && wikidata.de[0].definitions) {
+           const def = wikidata.de[0].definitions[0].definition.replace(/<[^>]+>/g, '');
+           data = [{ word: word, meanings: [{ partOfSpeech: 'other', definitions: [{ definition: def }] }] }];
+        } else throw new Error("Invalid format");
       } catch(e2) {
-        reactSteps.style.display = 'none';
-        resultsDiv.innerHTML = `<div class="def-card">Word not found. Try another word.</div>`;
+        if(reactSteps) reactSteps.style.display = 'none';
+        if(resultsDiv) resultsDiv.innerHTML = `<div class="def-card glass">Word not found. Try another word.</div>`;
         return;
       }
     }
   }
   
-  steps[2].className = 'react-step active'; // Translate
+  if(steps[2]) steps[2].className = 'react-step active'; // Translate
   
   const lastSearch = searchHistory.find(x => x.word.toLowerCase() === word.toLowerCase());
+  const episodic = el('episodicMemory');
   if(lastSearch) {
     const diffDays = Math.floor((new Date() - new Date(lastSearch.dateTS)) / (1000 * 60 * 60 * 24));
     const ago = diffDays === 0 ? "today" : `${diffDays} days ago`;
-    document.getElementById('episodicMemory').innerHTML = `📚 Searched ${lastSearch.count + 1} times — last: ${ago}`;
+    if(episodic) episodic.innerHTML = `📚 Searched ${lastSearch.count + 1} times — last: ${ago}`;
     lastSearch.count++;
     lastSearch.dateTS = new Date().getTime();
   } else {
-    document.getElementById('episodicMemory').innerHTML = '';
+    if(episodic) episodic.innerHTML = '';
     searchHistory.push({word, dateTS: new Date().getTime(), count: 1});
   }
-  localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+  safeSave('searchHistory', searchHistory);
   updateInContext();
 
   let cardsHtml = '';
   let idx = 0;
   
-  for(const entry of data) {
-    for(const meaning of entry.meanings) {
-      for(const def of meaning.definitions.slice(0, 2)) {
-        let tDef = isMultiple ? translatedInput : await translate(def.definition);
-        let ex = def.example || '';
-        let tEx = ex ? await translate(ex) : '';
-        let wTrans = await translate(entry.word);
-        
-        let posClass = 'other';
-        let badgeColor = '#888780';
-        if(meaning.partOfSpeech.includes('noun')) { posClass = 'noun'; badgeColor = '#185FA5'; }
-        else if(meaning.partOfSpeech.includes('verb')) { posClass = 'verb'; badgeColor = '#1D9E75'; }
-        else if(meaning.partOfSpeech.includes('adj')) { posClass = 'adj'; badgeColor = '#EF9F27'; }
+  try {
+    for(const entry of data) {
+      if(!entry.meanings) continue;
+      for(const meaning of entry.meanings) {
+        if(!meaning.definitions) continue;
+        for(const def of meaning.definitions.slice(0, 2)) {
+          let tDef = isMultiple ? translatedInput : await translate(def.definition);
+          let ex = def.example || '';
+          let tEx = ex ? await translate(ex) : '';
+          let wTrans = await translate(entry.word);
+          
+          let posClass = 'other';
+          let badgeColor = '#888780';
+          let pos = meaning.partOfSpeech || 'other';
+          if(pos.includes('noun')) { posClass = 'noun'; badgeColor = '#185FA5'; }
+          else if(pos.includes('verb')) { posClass = 'verb'; badgeColor = '#1D9E75'; }
+          else if(pos.includes('adj')) { posClass = 'adj'; badgeColor = '#EF9F27'; }
 
-        cardsHtml += `
-          <div class="def-card glass ${posClass}" style="animation-delay: ${idx * 0.1}s">
-            <div class="def-header">
-              <span class="def-title">${entry.word}</span>
-              <span class="def-badge" style="color: ${badgeColor}; border-color: ${badgeColor}">${meaning.partOfSpeech}</span>
+          const safeWord = entry.word.replace(/'/g, "\\'");
+          const safeTrans = wTrans.replace(/'/g, "\\'");
+          const safeEx = ex.replace(/'/g, "\\'");
+
+          cardsHtml += `
+            <div class="def-card glass ${posClass}" style="animation-delay: ${idx * 0.1}s">
+              <div class="def-header">
+                <span class="def-title">${entry.word}</span>
+                <span class="def-badge" style="color: ${badgeColor}; border-color: ${badgeColor}">${pos}</span>
+              </div>
+              <div class="def-meaning">📖 ${def.definition}</div>
+              <div class="def-translation">🌐 ${langs[currentLang] || ''} ${wTrans} - ${tDef}</div>
+              ${ex ? `<div class="def-example">💬 ${ex}<br>→ ${langs[currentLang] || ''} ${tEx}</div>` : ''}
+              <div class="def-actions">
+                <button class="action-btn" onclick="pronounce('${safeWord}')">🔊 Pronounce</button>
+                <button class="action-btn" onclick="saveWord('${safeWord}', '${safeTrans}', '${safeEx}')">⭐ Save</button>
+                <button class="action-btn" onclick="navigator.clipboard.writeText('${entry.word}')">📋 Copy</button>
+              </div>
             </div>
-            <div class="def-meaning">📖 ${def.definition}</div>
-            <div class="def-translation">🌐 ${langs[currentLang] || ''} ${wTrans} - ${tDef}</div>
-            ${ex ? `<div class="def-example">💬 ${ex}<br>→ ${langs[currentLang] || ''} ${tEx}</div>` : ''}
-            <div class="def-actions">
-              <button class="action-btn" onclick="pronounce('${entry.word.replace(/'/g,"\\'")}')">🔊 Pronounce</button>
-              <button class="action-btn" onclick="saveWord('${entry.word.replace(/'/g,"\\'")}', '${wTrans.replace(/'/g,"\\'")}', '${ex.replace(/'/g,"\\'")}')">⭐ Save</button>
-              <button class="action-btn" onclick="navigator.clipboard.writeText('${entry.word}')">📋 Copy</button>
-            </div>
-          </div>
-        `;
-        idx++;
+          `;
+          idx++;
+        }
       }
     }
+  } catch(e) {
+     console.error("Error generating cards", e);
   }
   
-  steps[3].className = 'react-step active'; // Clusters
+  if(steps[3]) steps[3].className = 'react-step active'; // Clusters
   
   let related = [];
   for(let c in clusters) {
@@ -688,34 +780,41 @@ async function handleSearch(word) {
   if(!related.length) {
     related = wordList.sort(()=>0.5-Math.random()).slice(0,3);
   }
-  document.getElementById('relatedWordsContainer').innerHTML = related.map(w => `<button class="related-tag" onclick="document.getElementById('searchInput').value='${w}';handleSearch('${w}')">${w}</button>`).join('');
-  document.getElementById('relatedWords').style.display = 'block';
+  const relatedCont = el('relatedWordsContainer');
+  if(relatedCont) {
+    relatedCont.innerHTML = related.map(w => {
+       const safeW = w.replace(/'/g, "\\'");
+       return `<button class="related-tag" onclick="document.getElementById('searchInput').value='${safeW}';handleSearch('${safeW}')">${w}</button>`;
+    }).join('');
+  }
+  if(relatedWords) relatedWords.style.display = 'block';
 
-  steps[4].className = 'react-step active'; // Done
+  if(steps[4]) steps[4].className = 'react-step active'; // Done
   
   setTimeout(() => {
-    reactSteps.style.display = 'none';
-    resultsDiv.innerHTML = cardsHtml;
-    
-    // Ad slot 2 after second card
-    if(idx > 1) {
-      const adHTML = `<div class="ad-slot glass" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="SLOT2">📢 Ad space — replace with your AdSense code</div>`;
-      const cards = resultsDiv.querySelectorAll('.def-card');
-      if(cards.length > 1) {
-        cards[1].insertAdjacentHTML('afterend', adHTML);
+    if(reactSteps) reactSteps.style.display = 'none';
+    if(resultsDiv) {
+      resultsDiv.innerHTML = cardsHtml;
+      if(idx > 1) {
+        const adHTML = `<div class="ad-slot glass" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="SLOT2">📢 Ad space — replace with your AdSense code</div>`;
+        const cards = resultsDiv.querySelectorAll('.def-card');
+        if(cards.length > 1) {
+          cards[1].insertAdjacentHTML('afterend', adHTML);
+        }
       }
     }
   }, 400);
-}
+};
 
 // Quiz System (Reflexion)
 let quizQueue = [];
 let currentQ = 0;
 let correctCount = 0;
 
-function startQuiz() {
+window.startQuiz = function() {
   if(savedWords.length < 3) return alert("Save at least 3 words to quiz!");
-  document.getElementById('quizModal').classList.add('active');
+  const qModal = el('quizModal');
+  if(qModal) qModal.classList.add('active');
   
   let weakWords = [...savedWords].sort((a,b) => a.score - b.score);
   quizQueue = weakWords.slice(0, 5);
@@ -729,9 +828,9 @@ function startQuiz() {
   }
   
   nextQuestion(note);
-}
+};
 
-function nextQuestion(note = '') {
+window.nextQuestion = function(note = '') {
   if(currentQ >= quizQueue.length) {
     endQuiz();
     return;
@@ -741,10 +840,13 @@ function nextQuestion(note = '') {
   let type = Math.random() > 0.5 ? 'type' : 'choice';
   
   let html = note;
+  const safeWord = q.word.replace(/'/g, "\\'");
+  const safeTrans = q.translation.replace(/'/g, "\\'");
+
   if(type === 'type') {
     html += `<h3 style="margin-bottom:0.5rem">What is the German word for:</h3><p class="def-translation" style="font-size:1.5rem">${q.translation}</p>
              <input type="text" id="quizInput" class="quiz-input" placeholder="Type in German..." autocomplete="off">
-             <button class="btn" style="margin-top:1rem; width:100%" onclick="checkQuizType('${q.word.replace(/'/g,"\\'")}')">Submit</button>`;
+             <button class="btn" style="margin-top:1rem; width:100%" onclick="checkQuizType('${safeWord}')">Submit</button>`;
   } else {
     let options = [q];
     let others = savedWords.filter(x => x.word !== q.word).sort(()=>0.5-Math.random()).slice(0,3);
@@ -753,30 +855,39 @@ function nextQuestion(note = '') {
     
     html += `<h3 style="margin-bottom:0.5rem">Select the meaning of:</h3><p style="font-size:1.8rem; font-weight:bold; margin-bottom:1rem">${q.word}</p>
              <div class="quiz-options">
-               ${options.map(o => `<button class="quiz-option" onclick="checkQuizChoice('${q.word.replace(/'/g,"\\'")}', '${o.word.replace(/'/g,"\\'")}', '${q.translation.replace(/'/g,"\\'")}', '${o.translation.replace(/'/g,"\\'")}')">${o.translation}</button>`).join('')}
+               ${options.map(o => {
+                 const safeOWord = o.word.replace(/'/g, "\\'");
+                 const safeOTrans = o.translation.replace(/'/g, "\\'");
+                 return `<button class="quiz-option" onclick="checkQuizChoice('${safeWord}', '${safeOWord}', '${safeTrans}', '${safeOTrans}')">${o.translation}</button>`;
+               }).join('')}
              </div>`;
   }
   
-  document.getElementById('quizContent').innerHTML = html;
-  if(type === 'type') setTimeout(()=>document.getElementById('quizInput').focus(), 100);
-}
+  const qc = el('quizContent');
+  if(qc) {
+    qc.innerHTML = html;
+    if(type === 'type') setTimeout(()=> { const qi = el('quizInput'); if(qi) qi.focus(); }, 100);
+  }
+};
 
-function handleWrong(word, wrongGuess, correctTrans) {
+window.handleWrong = function(word, wrongGuess, correctTrans) {
   let w = savedWords.find(x => x.word === word);
-  if(w) { w.score -= 1; localStorage.setItem('savedWords', JSON.stringify(savedWords)); }
+  if(w) { w.score -= 1; safeSave('savedWords', savedWords); }
   reflections.push({word, correct: correctTrans, wrong: wrongGuess, date: new Date().getTime()});
   if(reflections.length > 20) reflections.shift();
-  localStorage.setItem('reflections', JSON.stringify(reflections));
-}
+  safeSave('reflections', reflections);
+};
 
-function handleRight(word) {
+window.handleRight = function(word) {
   let w = savedWords.find(x => x.word === word);
-  if(w) { w.score += 1; localStorage.setItem('savedWords', JSON.stringify(savedWords)); }
+  if(w) { w.score += 1; safeSave('savedWords', savedWords); }
   correctCount++;
-}
+};
 
-function checkQuizType(correctWord) {
-  let val = document.getElementById('quizInput').value.trim();
+window.checkQuizType = function(correctWord) {
+  const qi = el('quizInput');
+  if(!qi) return;
+  let val = qi.value.trim();
   let q = quizQueue[currentQ];
   if(val.toLowerCase() === correctWord.toLowerCase()) {
     handleRight(correctWord);
@@ -787,9 +898,9 @@ function checkQuizType(correctWord) {
     currentQ++;
     nextQuestion(`<div style="color:#EF9F27; margin-bottom:1rem; font-weight:bold; font-size:1.2rem">❌ Incorrect! ${correctWord} means ${q.translation}</div>`);
   }
-}
+};
 
-function checkQuizChoice(correctWord, selectedWord, correctTrans, selectedTrans) {
+window.checkQuizChoice = function(correctWord, selectedWord, correctTrans, selectedTrans) {
   if(correctWord === selectedWord) {
     handleRight(correctWord);
     currentQ++;
@@ -799,21 +910,23 @@ function checkQuizChoice(correctWord, selectedWord, correctTrans, selectedTrans)
     currentQ++;
     nextQuestion(`<div style="color:#EF9F27; margin-bottom:1rem; font-weight:bold; font-size:1.2rem">❌ Incorrect! ${correctWord} means ${correctTrans}</div>`);
   }
-}
+};
 
-function endQuiz() {
+window.endQuiz = function() {
   let score = Math.round((correctCount/quizQueue.length)*100);
   let emoji = score === 100 ? '🏆' : score > 50 ? '👍' : '💪';
-  
-  document.getElementById('quizContent').innerHTML = `
-    <h2>Quiz Complete! ${emoji}</h2>
-    <p style="font-size:2.5rem; font-weight:bold; color:var(--primary); margin:1rem 0">${correctCount} / ${quizQueue.length}</p>
-    <p style="font-weight:bold; color:#EF9F27">🔥 1 day streak!</p>
-    <button class="btn" style="margin-top:2rem" onclick="document.getElementById('quizModal').classList.remove('active')">Close</button>
-  `;
-}
+  const qc = el('quizContent');
+  if(qc) {
+    qc.innerHTML = `
+      <h2>Quiz Complete! ${emoji}</h2>
+      <p style="font-size:2.5rem; font-weight:bold; color:var(--primary); margin:1rem 0">${correctCount} / ${quizQueue.length}</p>
+      <p style="font-weight:bold; color:#EF9F27">🔥 1 day streak!</p>
+      <button class="btn" style="margin-top:2rem" onclick="document.getElementById('quizModal').classList.remove('active')">Close</button>
+    `;
+  }
+};
 
-function exportWords() {
+window.exportWords = function() {
   if(savedWords.length === 0) return alert('No words saved.');
   let text = savedWords.map(w => `${w.word} - ${w.translation}`).join('\n');
   let blob = new Blob([text], {type: "text/plain"});
@@ -822,9 +935,9 @@ function exportWords() {
   a.href = url;
   a.download = "deutschdict_words.txt";
   a.click();
-}
+};
 
-window.onload = init;
+window.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
