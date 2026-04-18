@@ -640,7 +640,11 @@ async function translate(text) {
     if(!res.ok) throw new Error("Translation API failed");
     const data = await res.json();
     if(data && data.responseData && data.responseData.translatedText) {
-      return data.responseData.translatedText;
+      let raw = data.responseData.translatedText;
+      // Decode HTML entities (like &#39;) for cleaner display
+      const txt = document.createElement('textarea');
+      txt.innerHTML = raw;
+      return txt.value;
     }
     return text;
   } catch(e) { 
