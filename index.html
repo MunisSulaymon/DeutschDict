@@ -1585,6 +1585,7 @@
     let savedWords = [];
     let searchHistory = [];
     let reflections = [];
+    let sessionLog = [];
     let currentLang = 'uz';
 
     try {
@@ -1611,6 +1612,65 @@
     };
 
     const el = (id) => document.getElementById(id);
+
+    // ── CORE ENGINE FUNCTIONS ───────────────────────────────
+    async function translate(text) {
+      if (!text) return "";
+      try {
+        const r = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=de&tl=${currentLang}&dt=t&q=${encodeURIComponent(text)}`);
+        const d = await r.json();
+        return d[0][0][0];
+      } catch (e) { return text; }
+    }
+
+    function pronounce(word) {
+      if (!word) return;
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = 'de-DE';
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function renderWOTD() {
+      const wotd = el('wotd');
+      if (!wotd) return;
+      const today = new Date().getDate();
+      const word = wordList[today % wordList.length];
+      translate(word).then(t => {
+        wotd.innerHTML = `
+          <div style="font-size:1.8rem; font-weight:700; color:var(--primary);">${word}</div>
+          <div style="font-size:1.1rem; color:var(--text-muted); margin:0.5rem 0;">${t}</div>
+          <button class="action-btn" style="margin-top:0.5rem;" onclick="handleSearch('${word}')">Learn More</button>
+        `;
+      });
+    }
+
+    function updateFlashcard() {
+      const fc = el('flashcard');
+      if (!fc || savedWords.length === 0) return;
+      const word = savedWords[Math.floor(Math.random() * savedWords.length)];
+      fc.innerHTML = `
+        <div style="font-size:1.4rem; font-weight:700;">${word.word}</div>
+        <div style="color:var(--text-muted); margin:0.5rem 0;">(Click to reveal)</div>
+      `;
+      fc.onclick = () => {
+        fc.innerHTML = `
+          <div style="font-size:1.4rem; font-weight:700;">${word.word}</div>
+          <div style="font-size:1.1rem; color:var(--primary); margin:0.5rem 0;">${word.translation}</div>
+        `;
+        fc.onclick = updateFlashcard;
+      };
+    }
+
+    function updateReflection() {
+      const box = el('reflectionLog');
+      if (!box || reflections.length === 0) return;
+      box.innerHTML = reflections.slice(-3).reverse().map(r => `
+        <div style="font-size:0.85rem; margin-bottom:0.5rem; padding:0.5rem; background:var(--glass-hover); border-radius:8px;">
+          <strong>${r.word}</strong>: Mistook for <em>${r.wrong}</em>. Remember: ${r.correct}
+        </div>
+      `).join('');
+    }
 
     function initWaterRipple() {
       try {
@@ -1749,350 +1809,20 @@
       } catch (e) { }
     }
 
-    function updateFlashcard() {
-      const front = el('fcFront');
-      const back = el('fcBack');
-      const ex = el('fcExample');
-      if (!front || !back || !savedWords.length) return;
+    // Deleted old updateFlashcard/updateReflection
 
-      const rand = savedWords[Math.floor(Math.random() * savedWords.length)];
-      front.textContent = rand.word;
-      back.textContent = rand.translation;
-      ex.textContent = rand.example || '';
-    }
 
-    let sessionLog = [];
-    function updateReflection() {
-      const box = el('reflectionContent');
-      if (!box) return;
-      if (!sessionLog.length) return;
+    // Deleted old saveWord/removeWord
 
-      box.innerHTML = sessionLog.map(item => `
-    <div class="reflection-item">${item}</div>
-  `).join('');
-    }
 
-    window.saveWord = function (word, translation, example) {
-      if (!savedWords.find(w => w.word === word)) {
-        savedWords.push({ word, translation, example, date: new Date().toLocaleDateString(), score: 0 });
-        safeSave('savedWords', savedWords);
-        updateProfile();
-        renderSaved();
-        alert(`⭐ ${word} saved!`);
-        if (savedWords.length >= 3 && savedWords.length % 3 === 0) {
-          setTimeout(startQuiz, 1000);
-        }
-      } else {
-        alert(`Already saved ${word}`);
-      }
-    };
+    // Deleted old renderSaved
 
-    window.removeWord = function (word) {
-      savedWords = savedWords.filter(w => w.word !== word);
-      safeSave('savedWords', savedWords);
-      updateProfile();
-      renderSaved();
-    };
 
-    function renderSaved() {
-      const savedList = el('savedList');
-      if (!savedList) return;
-      savedList.innerHTML = '';
-      savedWords.forEach(w => {
-        const div = document.createElement('div');
-        div.className = 'saved-item';
-        const safeWord = w.word.replace(/'/g, "\\'");
-        div.innerHTML = `
-      <div><strong>${w.word}</strong> - ${w.translation} <small style="color:var(--text-muted); font-size:0.8rem">(${w.date})</small></div>
-      <button class="action-btn" onclick="removeWord('${safeWord}')">🗑</button>
-    `;
-        savedList.appendChild(div);
-      });
-    }
+    // Deleted old translate/pronounce
 
-    async function translate(text) {
-      if (!text) return '';
-      try {
-        const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=de|${currentLang}`);
-        if (!res.ok) throw new Error("Translation API failed");
-        const data = await res.json();
-        if (data && data.responseData && data.responseData.translatedText) {
-          let raw = data.responseData.translatedText;
-          // Decode HTML entities (like &#39;) for cleaner display
-          const txt = document.createElement('textarea');
-          txt.innerHTML = raw;
-          return txt.value;
-        }
-        return text;
-      } catch (e) {
-        console.error("Translation error", e);
-        return text;
-      }
-    }
 
-    window.pronounce = function (word) {
-      try {
-        const u = new SpeechSynthesisUtterance(word);
-        u.lang = 'de-DE';
-        speechSynthesis.speak(u);
-      } catch (e) {
-        console.error("Speech Synthesis not supported", e);
-      }
-    };
-
-    async function renderWOTD() {
-      const wotdWord = el('wotdWord');
-      const wotdMeaning = el('wotdMeaning');
-      if (!wotdWord || !wotdMeaning) return;
-
-      const day = Math.floor(Date.now() / 86400000);
-      const word = wordList[day % wordList.length];
-
-      try {
-        let meaning = "No definition found.";
-        let pos = "word";
-
-        try {
-          const res = await fetch(`https://api.freedictionaryapi.com/api/v2/entries/de/${word}`);
-          if (!res.ok) throw new Error("not found");
-          const data = await res.json();
-
-          if (data && data[0] && data[0].meanings && data[0].meanings[0]) {
-            pos = data[0].meanings[0].partOfSpeech || 'word';
-            if (data[0].meanings[0].definitions && data[0].meanings[0].definitions[0]) {
-              meaning = data[0].meanings[0].definitions[0].definition;
-            }
-          }
-        } catch (err1) {
-          // Fallback to Wiktionary API if FreeDictionary fails
-          const res2 = await fetch(`https://en.wiktionary.org/api/rest_v1/page/definition/${word}`);
-          if (!res2.ok) throw new Error("Wiktionary fail");
-          const wikidata = await res2.json();
-          if (wikidata && wikidata.de && wikidata.de[0] && wikidata.de[0].definitions) {
-            meaning = wikidata.de[0].definitions[0].definition.replace(/<[^>]+>/g, '');
-            pos = wikidata.de[0].partOfSpeech || 'noun';
-          } else throw new Error("Invalid Wiktionary format");
-        }
-
-        const translation = await translate(meaning);
-        const wTranslation = await translate(word);
-
-        wotdWord.innerHTML = `${word} <span class="wotd-badge">${pos}</span>`;
-        wotdMeaning.textContent = `📖 ${meaning}`;
-
-        const transEl = el('wotdTranslation');
-        if (transEl) transEl.textContent = `${langs[currentLang] || '🌐'} ${wTranslation} - ${translation}`;
-
-        const tipEl = el('wotdTip');
-        if (tipEl) tipEl.textContent = `💡 This word appears frequently in everyday conversations`;
-
-        const pronEl = el('wotdPronounce');
-        if (pronEl) pronEl.onclick = () => pronounce(word);
-
-        const saveEl = el('wotdSave');
-        const safeWord = word.replace(/'/g, "\\'");
-        const safeWTrans = wTranslation.replace(/'/g, "\\'");
-        const safeMeaning = meaning.replace(/'/g, "\\'");
-        if (saveEl) saveEl.onclick = () => saveWord(safeWord, safeWTrans, safeMeaning);
-      } catch (e) {
-        console.error("WOTD error", e);
-        wotdWord.textContent = word;
-        wotdMeaning.textContent = "Definition could not be loaded.";
-      }
-    }
-
-    window.handleSearch = async function (word) {
-      if (!word || typeof word !== 'string') return;
-      word = word.trim();
-      if (!word) return;
-
-      const reactSteps = el('reactSteps');
-      const resultsDiv = el('results');
-      const relatedWords = el('relatedWords');
-
-      if (reactSteps) reactSteps.style.display = 'block';
-      if (resultsDiv) resultsDiv.innerHTML = '';
-      if (relatedWords) relatedWords.style.display = 'none';
-
-      const steps = [1, 2, 3, 4, 5].map(i => el(`step${i}`));
-      steps.forEach(s => { if (s) s.className = 'react-step'; });
-
-      if (steps[0]) steps[0].className = 'react-step active'; // Detect
-      await new Promise(r => setTimeout(r, 300));
-
-      if (steps[1]) steps[1].className = 'react-step active'; // Fetch
-
-      let isMultiple = word.includes(' ');
-      let data;
-      let translatedInput;
-
-      if (isMultiple) {
-        translatedInput = await translate(word);
-        data = [{
-          word: word,
-          meanings: [{
-            partOfSpeech: 'phrase',
-            definitions: [{
-              definition: `Searching for the phrase "${word}"`,
-              example: word
-            }]
-          }]
-        }];
-      } else {
-        try {
-          const res = await fetch(`https://api.freedictionaryapi.com/api/v2/entries/de/${word}`);
-          if (!res.ok) throw new Error("Not found");
-          data = await res.json();
-        } catch (e) {
-          try {
-            const res2 = await fetch(`https://en.wiktionary.org/api/rest_v1/page/definition/${word}`);
-            if (!res2.ok) throw new Error("Wiktionary fail");
-            const wikidata = await res2.json();
-            if (wikidata && wikidata.de && wikidata.de[0] && wikidata.de[0].definitions) {
-              const def = wikidata.de[0].definitions[0].definition.replace(/<[^>]+>/g, '');
-              data = [{ word: word, meanings: [{ partOfSpeech: 'other', definitions: [{ definition: def }] }] }];
-            } else throw new Error("Invalid format");
-          } catch (e2) {
-            if (reactSteps) reactSteps.style.display = 'none';
-            if (resultsDiv) resultsDiv.innerHTML = `<div class="def-card glass">Word not found. Try another word.</div>`;
-            return;
-          }
-        }
-      }
-
-      if (steps[2]) steps[2].className = 'react-step active'; // Translate
-
-      const lastSearch = searchHistory.find(x => x.word.toLowerCase() === word.toLowerCase());
-      const episodic = el('episodicMemory');
-      if (lastSearch) {
-        const diffDays = Math.floor((new Date() - new Date(lastSearch.dateTS)) / (1000 * 60 * 60 * 24));
-        const ago = diffDays === 0 ? "today" : `${diffDays} days ago`;
-        if (episodic) episodic.innerHTML = `📚 Searched ${lastSearch.count + 1} times — last: ${ago}`;
-        lastSearch.count++;
-        lastSearch.dateTS = new Date().getTime();
-      } else {
-        if (episodic) episodic.innerHTML = '';
-        searchHistory.push({ word, dateTS: new Date().getTime(), count: 1 });
-      }
-      safeSave('searchHistory', searchHistory);
-      updateInContext();
-
-      let cardsHtml = '';
-      let idx = 0;
-
-      try {
-        for (const entry of data) {
-          if (!entry.meanings) continue;
-          for (const meaning of entry.meanings) {
-            if (!meaning.definitions) continue;
-            for (const def of meaning.definitions.slice(0, 2)) {
-              let tDef = isMultiple ? translatedInput : await translate(def.definition);
-              let ex = def.example || '';
-              let tEx = ex ? await translate(ex) : '';
-              let wTrans = isMultiple ? translatedInput : await translate(entry.word);
-
-              let posClass = 'other';
-              let pos = meaning.partOfSpeech || 'other';
-              if (pos.includes('noun')) { posClass = 'noun'; }
-              else if (pos.includes('verb')) { posClass = 'verb'; }
-              else if (pos.includes('adj')) { posClass = 'adj'; }
-
-              const safeWord = entry.word.replace(/'/g, "\\'");
-              const safeTrans = wTrans.replace(/'/g, "\\'");
-              const safeEx = ex.replace(/'/g, "\\'");
-
-              cardsHtml += `
-            <div class="def-card glass ${posClass}" style="animation-delay: ${idx * 0.1}s">
-              <div class="def-header">
-                <span class="def-title">${entry.word}</span>
-                <span class="def-badge">${pos}</span>
-              </div>
-              <div class="def-meaning">📖 ${def.definition}</div>
-              <div class="def-translation">🌐 ${langs[currentLang] || ''} ${wTrans}</div>
-              ${ex ? `<div class="def-example">💬 ${ex}<br>→ ${langs[currentLang] || ''} ${tEx}</div>` : ''}
-              <div class="def-actions">
-                <button class="action-btn" onclick="pronounce('${safeWord}')">🔊 Pronounce</button>
-                <button class="action-btn" onclick="saveWord('${safeWord}', '${safeTrans}', '${safeEx}')">⭐ Save</button>
-                <button class="action-btn" onclick="navigator.clipboard.writeText('${entry.word}')">📋 Copy</button>
-              </div>
-            </div>
-          `;
-              idx++;
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Error generating cards", e);
-      }
-
-      if (steps[3]) steps[3].className = 'react-step active'; // Clusters
-
-      let related = [];
-      for (let c in clusters) {
-        if (clusters[c].map(x => x.toLowerCase()).includes(word.toLowerCase())) {
-          related = clusters[c].filter(x => x.toLowerCase() !== word.toLowerCase()).slice(0, 3);
-          break;
-        }
-      }
-      if (!related.length) {
-        related = wordList.sort(() => 0.5 - Math.random()).slice(0, 3);
-      }
-      const relatedCont = el('relatedWordsContainer');
-      if (relatedCont) {
-        relatedCont.innerHTML = related.map(w => {
-          const safeW = w.replace(/'/g, "\\'");
-          return `<button class="related-tag" onclick="document.getElementById('searchInput').value='${safeW}';handleSearch('${safeW}')">${w}</button>`;
-        }).join('');
-      }
-      if (relatedWords) relatedWords.style.display = 'block';
-
-      if (steps[4]) steps[4].className = 'react-step active'; // Done
-
-      sessionLog.push(`Synthesized <strong>${word}</strong> with multi-agent consensus.`);
-      if (sessionLog.length > 5) sessionLog.shift();
-      updateReflection();
-      updateTutor(word);
-
-      setTimeout(() => {
-        if (reactSteps) reactSteps.style.display = 'none';
-        if (resultsDiv) {
-          resultsDiv.innerHTML = cardsHtml;
-
-          // ADD MULTI-AGENT CARDS
-          const agents = [
-            { type: 'local', tag: 'The Local', icon: '🏘️', msg: `In casual German, you might also hear "Na, alles klar?" when using ${word}.` },
-            { type: 'expert', tag: 'Grammar Expert', icon: '📚', msg: `Remember to check the gender of ${word} if it's a noun!` }
-          ];
-
-          agents.forEach(a => {
-            resultsDiv.innerHTML += `
-          <div class="def-card glass ${a.type}" style="border-left: 4px solid var(--primary); margin-top:1rem;">
-            <div class="agent-tag tag-${a.type}">${a.tag}</div>
-            <div style="font-size:1.1rem;">${a.icon} ${a.msg}</div>
-          </div>
-        `;
-          });
-
-          // ADD ACTION BUTTONS
-          const lastCard = resultsDiv.querySelector('.def-card:last-child');
-          if (lastCard) {
-            lastCard.innerHTML += `
-          <div class="def-actions" style="margin-top:1rem; border-top:1px solid var(--glass-border); padding-top:1rem;">
-            <button class="action-btn" onclick="visualize('${word}')">🖼️ Visualize Context</button>
-          </div>
-        `;
-          }
-
-          if (idx > 1) {
-            const adHTML = `<div class="ad-slot glass"><div>🎁 Daily Gift</div><span>You unlocked a free learning session!</span></div>`;
-            const cards = resultsDiv.querySelectorAll('.def-card');
-            if (cards.length > 1) {
-              cards[1].insertAdjacentHTML('afterend', adHTML);
-            }
-          }
-        }
-      }, 400);
-    };
+    // Consolidated logic into Advanced Agentic blocks below.
+;
 
     // 🧪 Quiz System (Reflexion + SM-2)
     let quizQueue = [];
@@ -2724,15 +2454,6 @@
         }
       }, 400);
     }
-
-    // ── Mission System ──────────────────────────────────────────
-    let currentMission = 'General';
-    const missionVocab = {
-      'Travel': ['Flughafen','Hotel','Zug','Straße','Bahnhof','Reise','Gepäck'],
-      'Medical': ['Arzt','Krankenhaus','Medizin','Rezept','Gesundheit','Apotheke'],
-      'IT': ['Computer','Software','Netzwerk','Daten','Programm','Code','Server'],
-      'Exam': ['Prüfung','Lernen','Grammatik','Vokabular','Übung','Aufgabe']
-    };
 
     window.setMission = function(btn, mission) {
       currentMission = mission;
