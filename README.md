@@ -1,29 +1,88 @@
-# DeutschDict — AI-Powered German Dictionary
-Free German dictionary with definitions in 18 languages.
-Powered by ReAct, Reflexion, RAG, Chain-of-Thought patterns.
+# 🇩🇪 DeutschDict — Agentic AI Learning Platform
 
-## Live Demo
-https://munissulaymon.github.io/DeutschDict
+> A production-grade German learning ecosystem powered by an advanced **Agentic Cognitive Architecture**.
 
-## ✨ Core Features
-- **Multi-Language Search:** Search German words and get instant definitions translated into 18 languages.
-- **Premium Glassmorphism UI:** Stunning, modern aesthetic featuring an animated fluid background and interactive components.
-- **Text-to-Speech:** Hear the native German pronunciation of any word via the browser's speech API.
-- **Word of the Day:** Automatically rotates every 24 hours with contextual tips to build your vocabulary.
-- **Smart Quiz Engine (Reflexion):** Generates typing and multiple-choice flashcards from your saved words, tracking mistakes and providing dynamic reflection hints.
-- **Semantic Word Clusters:** Discovers and suggests conceptually related words for every search.
-- **Local Memory & Learning Profile:** Saves words locally, tracks recent searches, and automatically levels up your user profile (e.g., Beginner 🌱 → Intermediate 🌿).
-- **Export Data:** Download your entire saved word list as a `.txt` file for use in other apps.
-- **Dark/Light Mode:** Seamlessly switch between a vibrant light theme and a deep, glowing dark theme.
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://munissulaymon.github.io/DeutschDict)
+[![AI Engineering](https://img.shields.io/badge/architecture-agentic-blue)](#-cognitive-architecture)
+[![Research Driven](https://img.shields.io/badge/research-2026_stack-blueviolet)](#-research-bibliography)
 
-## AI Papers That Inspired This
-- ReAct (Princeton/Google) — search reasoning steps
-- Reflexion — quiz memory + spaced repetition
-- RAG — definition retrieval pipeline
-- Chain-of-Thought — thinking step animations
-- Agent Memory — learning profile system
+DeutschDict is not just a dictionary; it is a **proactive tutor** that synthesizes multi-source linguistic data, visualizes semantic knowledge graphs, and optimizes long-term memory retention through algorithmic spaced repetition.
 
-## Run Locally
-Open index.html in any browser. No setup needed.
+---
 
-## License: MIT
+## 🧠 Cognitive Architecture
+
+DeutschDict implements a **Stateful Multi-Agent Orchestrator** to handle linguistic queries. Every search triggers a reasoning loop across specialized agents:
+
+```mermaid
+graph TD
+    User([User Search]) --> Orchestrator{Agent Orchestrator}
+    Orchestrator --> L[Linguist Agent]
+    Orchestrator --> G[Grammar Expert]
+    Orchestrator --> V[Visualizer Agent]
+    Orchestrator --> C[Critic Agent]
+    
+    L --> RAG[Multi-hop RAG Pipeline]
+    G --> Gender[Gender Heuristics]
+    C --> Reflexion[Reflexion / Self-Correction]
+    
+    Reflexion --> UI[Generative UI Widgets]
+    UI --> Map[Knowledge Graph Map]
+    UI --> Verb[Verb Conjugation Table]
+```
+
+---
+
+## ✨ Advanced Features
+
+### 🧪 SM-2 Spaced Repetition (SRS)
+The quiz system is powered by the **SM-2 Algorithm**. Instead of random flashcards, DeutschDict calculates the "Ease Factor" and "Optimal Interval" for every word based on your performance, ensuring you review words exactly when you're about to forget them.
+
+### 🎨 Generative UI Widgets
+Inspired by the **Vercel AI SDK**, DeutschDict renders dynamic, interactive widgets based on the agent's tool calls:
+- **Interactive Verb Tables**: On-the-fly conjugation for any German verb.
+- **Semantic Knowledge Maps**: A visual graph interface to traverse related words via graph-based retrieval.
+
+### 🛡️ Corrective RAG (Multi-hop)
+Avoids "Hallucinations" by chaining multiple retrieval steps:
+1. **Hop 1**: Primary linguistic API (FreeDictionary).
+2. **Hop 2**: Fallback to Wiktionary REST API if quality is low.
+3. **Quality Scoring**: Every definition is assigned a RAG Quality Badge (High/Medium/Low).
+
+### 🧐 Metacognitive Insights
+A proactive agent monitors your learning session and provides **Agent Insights**—real-time advice based on your search history, accuracy trends, and SRS due dates.
+
+---
+
+## 🔬 Research Bibliography
+
+DeutschDict is a practical implementation of several industry-standard AI research papers and frameworks:
+
+- **ReAct** (Reason + Act): Multi-step reasoning traces in search.
+- **Reflexion**: Mistake-driven learning and reflection notes.
+- **Toolformer**: Heuristic gender and part-of-speech detection.
+- **GraphRAG**: Semantic clustering and knowledge graph navigation.
+- **Generative Agents**: Persistent episodic memory and session logs.
+- **SM-2 Algorithm**: Algorithmic memory consolidation.
+
+---
+
+## 🛠️ Tech Stack (2026 Edition)
+
+- **Engine**: Vanilla JavaScript with Stateful Agentic Logic.
+- **Design**: Premium Glassmorphism / Bento Dashboarding.
+- **Storage**: Persistent LocalStorage with Fault-Tolerant JSON.
+- **APIs**: Multi-hop RAG (FreeDict/Wiktionary), Unsplash (Visualizer).
+- **Architecture**: Graph-based state machine.
+
+---
+
+## 🚀 Getting Started
+
+1. **Live App**: Visit [DeutschDict Live](https://munissulaymon.github.io/DeutschDict).
+2. **Local Development**: Clone the repo and open `index.html`. No build steps or server required—the entire agentic brain runs in your browser.
+
+---
+
+## 📜 License
+MIT License. Built for the advancement of Agentic AI Learning.
