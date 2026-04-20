@@ -1588,27 +1588,36 @@
     let sessionLog = [];
     let currentLang = 'uz';
 
+    // SESSION & XP STATE (Moved to top to prevent TDZ errors)
+    let sessionStart = Date.now();
+    let sessionStats = { searched: 0, savedToday: 0, quizCorrect: 0, quizTotal: 0 };
+    let currentMission = 'General';
+    let quizQueue = [];
+    let currentQ = 0;
+    let correctCount = 0;
+
+    const XP_REWARDS = { search: 5, save: 20, quiz_correct: 30, quiz_done: 15, streak: 50 };
+    const XP_LEVELS  = [
+      [0,'🌱','Beginner'],[100,'🌿','Explorer'],[250,'🌳','Learner'],
+      [500,'🏅','Student'],[1000,'🌟','Scholar'],[2000,'🏆','Master'],[5000,'⭐','Expert']
+    ];
+
+
     try {
       const s = localStorage.getItem('savedWords');
       if (s && s !== 'undefined' && s !== 'null') savedWords = JSON.parse(s);
-
       const h = localStorage.getItem('searchHistory');
       if (h && h !== 'undefined' && h !== 'null') searchHistory = JSON.parse(h);
-
       const r = localStorage.getItem('reflections');
       if (r && r !== 'undefined' && r !== 'null') reflections = JSON.parse(r);
-
       currentLang = localStorage.getItem('lang') || 'uz';
     } catch (e) {
-      console.error("Corrupt localStorage data. Resetting to defaults.", e);
-      savedWords = [];
-      searchHistory = [];
-      reflections = [];
+      console.error("Corrupt localStorage data.", e);
     }
 
     const safeSave = (key, val) => {
       try { localStorage.setItem(key, JSON.stringify(val)); }
-      catch (e) { console.error("Could not save to localStorage", e); }
+      catch (e) { console.error("Save failed", e); }
     };
 
     const el = (id) => document.getElementById(id);
@@ -1663,13 +1672,33 @@
     }
 
     function updateReflection() {
-      const box = el('reflectionLog');
-      if (!box || reflections.length === 0) return;
-      box.innerHTML = reflections.slice(-3).reverse().map(r => `
-        <div style="font-size:0.85rem; margin-bottom:0.5rem; padding:0.5rem; background:var(--glass-hover); border-radius:8px;">
-          <strong>${r.word}</strong>: Mistook for <em>${r.wrong}</em>. Remember: ${r.correct}
-        </div>
-      `).join('');
+      const box = el('reflectionContent');
+      if (!box) return;
+      
+      let html = '';
+      
+      // Part 1: Agentic Session Log (Episodic)
+      if (sessionLog.length > 0) {
+        html += `<div style="margin-bottom:1.5rem;">`;
+        sessionLog.slice(-3).reverse().forEach(log => {
+          html += `<div class="reflection-item">${log}</div>`;
+        });
+        html += `</div>`;
+      }
+
+      // Part 2: Reflexion on Mistakes
+      if (reflections.length > 0) {
+        html += `<div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.5rem;">⚠️ Recent Corrections</div>`;
+        reflections.slice(-2).reverse().forEach(r => {
+          html += `
+            <div style="font-size:0.85rem; margin-bottom:0.5rem; padding:0.8rem; background:var(--glass-hover); border-radius:12px; border:1px solid var(--glass-border);">
+              Mistook <strong>${r.word}</strong> for <em>${r.wrong}</em>. <span style="color:var(--accent);">Correct: ${r.correct}</span>
+            </div>`;
+        });
+      }
+
+      if (!html) html = '<p style="color:var(--text-muted);">Start searching to build your session memory...</p>';
+      box.innerHTML = html;
     }
 
     function initWaterRipple() {
@@ -1822,12 +1851,12 @@
 
 
     // Consolidated logic into Advanced Agentic blocks below.
-;
+    // Consolidated logic block below.
+
+
 
     // 🧪 Quiz System (Reflexion + SM-2)
-    let quizQueue = [];
-    let currentQ = 0;
-    let correctCount = 0;
+
 
     window.startQuiz = function () {
       if (savedWords.length < 3) return alert("Save at least 3 words to quiz!");
@@ -1961,7 +1990,8 @@
       a.click();
     };
 
-    window.addEventListener('DOMContentLoaded', () => { init(); initSession(); });
+
+
 
     // ════════════════════════════════════════════════════════════
     // 1. CORRECTIVE RAG — Quality Scoring + Multi-hop Retrieval
@@ -2072,14 +2102,8 @@
     // ════════════════════════════════════════════════════════════
     // 4. XP / STREAK / ACHIEVEMENT SYSTEM (Reflexion reward loop)
     // ════════════════════════════════════════════════════════════
-    const XP_REWARDS = { search: 5, save: 20, quiz_correct: 30, quiz_done: 15, streak: 50 };
-    const XP_LEVELS  = [
-      [0,'🌱','Beginner'],[100,'🌿','Explorer'],[250,'🌳','Learner'],
-      [500,'🏅','Student'],[1000,'🌟','Scholar'],[2000,'🏆','Master'],[5000,'⭐','Expert']
-    ];
+    // State variables moved to top.
 
-    let sessionStats = { searched: 0, savedToday: 0, quizCorrect: 0, quizTotal: 0 };
-    const sessionStart = Date.now();
 
     function updateXP(action) {
       const xpGain = XP_REWARDS[action] || 0;
@@ -2516,6 +2540,12 @@
       `;
       modal.classList.add('open');
     };
+
+    window.addEventListener('DOMContentLoaded', () => { 
+      init(); 
+      initSession(); 
+    });
+
 
   </script>
 </body>
